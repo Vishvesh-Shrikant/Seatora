@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TheatreRequestDto {
-    private String Name;
+    private String name;
     private String city;
     private String address;;
 }
