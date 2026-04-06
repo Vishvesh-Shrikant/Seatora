@@ -95,7 +95,6 @@
 //}
 package com.vishvesh.event_booking.utils;
 
-import com.vishvesh.event_booking.utils.dto.ApiErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

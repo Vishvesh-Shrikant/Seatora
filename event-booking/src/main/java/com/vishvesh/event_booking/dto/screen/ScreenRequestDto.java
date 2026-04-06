@@ -1,4 +1,4 @@
-package com.vishvesh.event_booking.utils.dto.screen;
+package com.vishvesh.event_booking.dto.screen;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

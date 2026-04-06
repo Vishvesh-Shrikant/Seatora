@@ -1,4 +1,4 @@
-package com.vishvesh.event_booking.utils.dto.authdto;
+package com.vishvesh.event_booking.dto.authdto;
 
 import com.vishvesh.event_booking.utils.enums.Role;
 import lombok.AllArgsConstructor;
@@ -12,9 +12,10 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class JwtDto {
-    private UUID userId;
+public class AuthResponseDto {
+    private UUID id;
     private String email;
+    private String name;
     private Role role;
-    private Boolean isVerified;
+    private boolean isVerified;
 }

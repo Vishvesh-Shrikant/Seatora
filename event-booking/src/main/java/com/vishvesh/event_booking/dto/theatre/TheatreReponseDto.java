@@ -1,6 +1,5 @@
-package com.vishvesh.event_booking.utils.dto.screen;
+package com.vishvesh.event_booking.dto.theatre;
 
-import com.vishvesh.event_booking.entity.Theatre;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,9 +12,13 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ScreenResponseDto {
-    private UUID screenId;
-    private String screenNo;
+public class TheatreReponseDto {
+    @NotBlank
     private UUID theatreId;
-    private Integer totalSeats;
+    @NotBlank
+    private String theatreName;
+    @NotBlank
+    private String theatreAddress;
+    @NotBlank
+    private String theatreCity;
 }

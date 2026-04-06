@@ -1,6 +1,6 @@
 package com.vishvesh.event_booking.security;
 
-import com.vishvesh.event_booking.utils.dto.authdto.JwtDto;
+import com.vishvesh.event_booking.dto.authdto.JwtDto;
 import com.vishvesh.event_booking.utils.enums.Role;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;

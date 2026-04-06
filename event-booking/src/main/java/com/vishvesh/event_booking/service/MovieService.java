@@ -2,8 +2,8 @@ package com.vishvesh.event_booking.service;
 
 import com.vishvesh.event_booking.entity.Movie;
 import com.vishvesh.event_booking.repository.MovieRepository;
-import com.vishvesh.event_booking.utils.dto.movie.MovieRequestDto;
-import com.vishvesh.event_booking.utils.dto.movie.MovieResponseDto;
+import com.vishvesh.event_booking.dto.movie.MovieRequestDto;
+import com.vishvesh.event_booking.dto.movie.MovieResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;

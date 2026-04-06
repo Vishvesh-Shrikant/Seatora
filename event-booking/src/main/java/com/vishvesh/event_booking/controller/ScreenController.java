@@ -1,10 +1,7 @@
 package com.vishvesh.event_booking.controller;
 
-import com.vishvesh.event_booking.entity.Screen;
-import com.vishvesh.event_booking.entity.Theatre;
-import com.vishvesh.event_booking.repository.ScreenRepository;
 import com.vishvesh.event_booking.service.ScreenService;
-import com.vishvesh.event_booking.utils.dto.screen.ScreenRequestDto;
+import com.vishvesh.event_booking.dto.screen.ScreenRequestDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;

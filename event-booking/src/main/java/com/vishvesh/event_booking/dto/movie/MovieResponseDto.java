@@ -1,4 +1,4 @@
-package com.vishvesh.event_booking.utils.dto.movie;
+package com.vishvesh.event_booking.dto.movie;
 
 import com.vishvesh.event_booking.utils.enums.MovieFormat;
 import lombok.AllArgsConstructor;

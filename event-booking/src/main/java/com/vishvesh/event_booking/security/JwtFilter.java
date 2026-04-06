@@ -1,7 +1,7 @@
 package com.vishvesh.event_booking.security;
 
 import com.vishvesh.event_booking.utils.CookieUtil;
-import com.vishvesh.event_booking.utils.dto.authdto.JwtDto;
+import com.vishvesh.event_booking.dto.authdto.JwtDto;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

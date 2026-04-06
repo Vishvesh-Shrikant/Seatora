@@ -1,4 +1,4 @@
-package com.vishvesh.event_booking.utils.dto;
+package com.vishvesh.event_booking.utils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 

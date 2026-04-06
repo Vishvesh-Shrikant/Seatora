@@ -2,9 +2,9 @@ package com.vishvesh.event_booking.controller;
 
 import com.vishvesh.event_booking.service.AuthService;
 import com.vishvesh.event_booking.utils.CookieUtil;
-import com.vishvesh.event_booking.utils.dto.authdto.AuthResponseDto;
-import com.vishvesh.event_booking.utils.dto.authdto.LoginDto;
-import com.vishvesh.event_booking.utils.dto.authdto.SignupDto;
+import com.vishvesh.event_booking.dto.authdto.AuthResponseDto;
+import com.vishvesh.event_booking.dto.authdto.LoginDto;
+import com.vishvesh.event_booking.dto.authdto.SignupDto;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package com.vishvesh.event_booking.utils.dto.theatre;
+package com.vishvesh.event_booking.dto.theatre;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
