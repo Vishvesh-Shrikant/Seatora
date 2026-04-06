@@ -24,7 +24,7 @@ public class TheatreController {
     }
 
     @PostMapping("/createTheatre")
-    @PreAuthorize("hasAuthority('Admin')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Map<String, Object>> createTheatre (@RequestBody TheatreRequestDto request){
         Map<String, Object> response= theatreService.createTheater(request);
         return ResponseEntity.status(201).body(response);

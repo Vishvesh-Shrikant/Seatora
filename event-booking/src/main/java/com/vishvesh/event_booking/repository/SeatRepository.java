@@ -10,6 +10,6 @@ import java.util.UUID;
 @Repository
 public interface SeatRepository extends JpaRepository<Seat, UUID> {
         List<Seat> findByScreenIdAndIsActiveTrue(UUID screenId);
-        boolean existsBySeatIdAndSeatNoAndIsActiveTrue(UUID seatId, String seatNo);
+        boolean existsByIdAndSeatNoAndIsActiveTrue(UUID seatId, String seatNo);
         int countByScreenIdAndIsActiveTrue(UUID seatId);
 }

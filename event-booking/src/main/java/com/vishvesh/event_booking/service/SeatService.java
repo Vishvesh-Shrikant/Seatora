@@ -40,7 +40,7 @@ public class SeatService {
         {
             throw new IllegalStateException("Screen is not active.");
         }
-        if(seatRepository.existsBySeatIdAndSeatNoAndIsActiveTrue(screenId,  seatRequestDto.getSeatNo()))
+        if(seatRepository.existsByIdAndSeatNoAndIsActiveTrue(screenId,  seatRequestDto.getSeatNo()))
         {
             throw new IllegalStateException("Seat is already active.");
         }
@@ -66,7 +66,7 @@ public class SeatService {
         {
             throw new IllegalStateException("Seat is not active.");
         }
-        if(!seat.getSeatNo().equals(seatRequestDto.getSeatNo()) && seatRepository.existsBySeatIdAndSeatNoAndIsActiveTrue(seatId, seatRequestDto.getSeatNo()))
+        if(!seat.getSeatNo().equals(seatRequestDto.getSeatNo()) && seatRepository.existsByIdAndSeatNoAndIsActiveTrue(seatId, seatRequestDto.getSeatNo()))
         {
             throw new IllegalStateException("Seat with seat name already exists.");
         }
