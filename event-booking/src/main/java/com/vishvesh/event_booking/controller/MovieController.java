@@ -3,6 +3,7 @@ package com.vishvesh.event_booking.controller;
 import com.vishvesh.event_booking.service.MovieService;
 import com.vishvesh.event_booking.utils.dto.movie.MovieRequestDto;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -12,7 +13,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/movie")
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class MovieController {
 
     private final MovieService movieService;

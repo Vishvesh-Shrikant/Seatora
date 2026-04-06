@@ -4,7 +4,7 @@ import com.vishvesh.event_booking.entity.Movie;
 import com.vishvesh.event_booking.repository.MovieRepository;
 import com.vishvesh.event_booking.utils.dto.movie.MovieRequestDto;
 import com.vishvesh.event_booking.utils.dto.movie.MovieResponseDto;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
@@ -15,7 +15,7 @@ import java.util.UUID;
 
 @Service
 @Slf4j
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class MovieService {
 
     private final MovieRepository movieRepository;
