@@ -100,6 +100,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
@@ -180,6 +181,14 @@ public class GlobalExceptionHandler {
 
         // But we hide the actual error from the user to prevent leaking database/code details
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Server Error", "An unexpected error occurred on our end. Please try again later.", request.getRequestURI(), null);
+    }
+
+    //10
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ApiErrorResponse> handleOptimisticLockException(ObjectOptimisticLockingFailureException ex, HttpServletRequest request) {
+        log.error("Unhandled exception at {}: ", request.getRequestURI(), ex);
+
+        return buildResponse(HttpStatus.CONFLICT, "Optimistic Lock Failure", ex.getMessage(), request.getRequestURI(), null);
     }
 
     // --- Helper Method to keep code DRY (Don't Repeat Yourself) ---
