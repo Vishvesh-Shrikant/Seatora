@@ -105,6 +105,7 @@ public class AuthService{
         JwtDto data = JwtDto.builder()
                 .userId(user.getId())
                 .email(user.getEmail())
+                .role(user.getRole())
                 .isVerified(user.isVerified())
                 .build();
         return jwtService.generateToken(data);
@@ -112,7 +113,7 @@ public class AuthService{
 
     public AuthResponseDto buildAuthResponse(@NonNull User user) {
         return AuthResponseDto.builder()
-                .id(user.getUserId())
+                .id(user.getId())
                 .email(user.getEmail())
                 .name(user.getName())
                 .role(user.getRole())

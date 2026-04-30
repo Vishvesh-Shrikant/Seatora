@@ -25,19 +25,6 @@ public class JwtService {
     }
 
     public String generateToken(JwtDto data) {
-//        Map<String, Object> claims = new HashMap<>();
-//        Date now = new Date();
-//        Date expiry = new Date(now.getTime() + EXPIRY_TIME*60*60*1000);
-//
-//        return Jwts.builder()
-//                .subject(data.getUserId().toString())
-//                .claim("email", data.getEmail())
-//                .claim("role", data.getRole().name())
-//                .claim("verified", data.getIsVerified())
-//                .issuedAt(now)
-//                .expiration(expiry)
-//                .signWith(SECRET_KEY)
-//                .compact();
         Map<String, Object> claims = new HashMap<>();
         Date now = new Date();
         Date expiry = new Date(now.getTime() + EXPIRY_TIME * 60 * 60 * 1000);
@@ -55,26 +42,7 @@ public class JwtService {
     }
 
     public Optional<JwtDto> parseToken(String token) {
-//        try {
-//            Claims claims = Jwts.parser()           // 0.12.x: parserBuilder() is gone — use parser()
-//                    .verifyWith(SECRET_KEY)
-//                    .build()
-//                    .parseSignedClaims(token)
-//                    .getPayload();
-//
-//            JwtDto data = JwtDto.builder()
-//                    .userId(UUID.fromString(claims.getSubject()))
-//                    .email(claims.get("email", String.class))
-//                    .role(Role.valueOf(claims.get("role", String.class)))
-//                    .isVerified(Boolean.TRUE.equals(claims.get("isVerified", Boolean.class)))
-//                    .build();
-//
-//            return Optional.of(data);
-//
-//        } catch (JwtException | IllegalArgumentException ex) {
-//            log.warn("Invalid JWT: {}", ex.getMessage());
-//            return Optional.empty();
-//        }
+
         try {
             Claims claims = Jwts.parser()
                     .verifyWith(SECRET_KEY)
