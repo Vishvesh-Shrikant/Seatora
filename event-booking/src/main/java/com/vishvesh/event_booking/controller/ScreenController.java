@@ -19,7 +19,7 @@ public class ScreenController {
 
     @PostMapping("/createScreen")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<Map<String, Object>> createScreen(@PathVariable @RequestBody ScreenRequestDto screen) {
+    public ResponseEntity<Map<String, Object>> createScreen(@RequestBody ScreenRequestDto screen) {
         return ResponseEntity.status(201).body(screenService.createScreen(screen));
     }
 

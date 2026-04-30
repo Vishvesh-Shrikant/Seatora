@@ -1,7 +1,5 @@
 package com.vishvesh.event_booking.dto.screen;
 
-import com.vishvesh.event_booking.entity.Theatre;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

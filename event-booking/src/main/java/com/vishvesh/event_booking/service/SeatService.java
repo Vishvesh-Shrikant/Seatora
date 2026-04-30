@@ -32,10 +32,9 @@ public class SeatService {
     }
 
     public Map<String, Object> addSeat(UUID screenId, SeatRequestDto seatRequestDto){
-        Screen screen = screenRepository.findById(screenId).get();
-        if(screenRepository.findById(screenId).isEmpty()){
-            throw new IllegalStateException("No screen found with id: " + screenId);
-        }
+        Screen screen = screenRepository.findById(screenId)
+                .orElseThrow(() -> new IllegalStateException("No screen found with id: " + screenId));
+
         if(!screen.getIsActive())
         {
             throw new IllegalStateException("Screen is not active.");
@@ -56,11 +55,11 @@ public class SeatService {
                 .build();
         seatRepository.save(seat);
         log.info("Seat {} added to Screen {}", seat.getSeatNo(), screen.getScreenNo());
-        return Map.of("success", true, "message", "Seats for given screen retrieved successfully",  "seats", mapToSeatResponseDto(seat));
+        return Map.of("success", true, "message", "Seat added successfully",  "seats", mapToSeatResponseDto(seat));
     }
 
     public Map<String , Object> updateSeat(UUID seatId, SeatRequestDto seatRequestDto){
-        Seat seat = seatRepository.findById(seatId).orElseThrow(() -> new IllegalArgumentException("Screen not found"));
+        Seat seat = seatRepository.findById(seatId).orElseThrow(() -> new IllegalArgumentException("Seat not found"));
 
         if(!seat.getIsActive())
         {

@@ -12,7 +12,9 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "seats_availability")
+@Table(name = "seats_availability", indexes = {
+        @Index(name = "idx_seat_availability_show_status", columnList = "show_id, seat_status")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -25,6 +27,10 @@ public class SeatAvailability {
     @Column(name = "id", nullable = false, updatable = false, columnDefinition = "TEXT")
     @JdbcTypeCode(Types.VARCHAR)
     private UUID id;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "show_id", nullable = false)
@@ -48,8 +54,6 @@ public class SeatAvailability {
 
     @Column(name = "lock_expiry")
     private OffsetDateTime lockExpiry;
-
-
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

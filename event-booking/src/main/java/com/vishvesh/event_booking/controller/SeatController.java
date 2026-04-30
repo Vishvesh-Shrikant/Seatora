@@ -22,19 +22,19 @@ public class SeatController {
     }
 
     @PostMapping("/addSeatToScreen")
-    @PreAuthorize("hasAuthority('ADMIN)")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Map<String, Object>> addSeat(@RequestBody SeatRequestDto request) {
         return ResponseEntity.status(201).body(seatService.addSeat(request.getScreenId(), request));
     }
 
     @PatchMapping("/updateSeat/{seatId}")
-    @PreAuthorize("hasAuthority('ADMIN)")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Map<String, Object>>  updateSeat(@PathVariable UUID seatId, @RequestBody SeatRequestDto request) {
         return ResponseEntity.status(200).body(seatService.updateSeat(seatId, request));
     }
 
     @DeleteMapping("deactivateSeat/{seatId}")
-    @PreAuthorize("hasAuthority('ADMIN)")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Map<String, Object>> deactivateSeat(@PathVariable UUID seatId) {
         return ResponseEntity.status(200).body(seatService.deactivateSeat(seatId));
     }

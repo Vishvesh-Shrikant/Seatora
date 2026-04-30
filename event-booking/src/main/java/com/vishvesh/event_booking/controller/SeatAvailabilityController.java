@@ -1,7 +1,6 @@
 package com.vishvesh.event_booking.controller;
 
 import com.vishvesh.event_booking.dto.seatavailability.SeatLockRequestDto;
-import com.vishvesh.event_booking.repository.SeatAvailabilityRepository;
 import com.vishvesh.event_booking.service.SeatAvailabilityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

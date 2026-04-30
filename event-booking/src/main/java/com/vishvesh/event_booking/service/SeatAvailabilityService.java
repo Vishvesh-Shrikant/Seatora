@@ -2,9 +2,7 @@ package com.vishvesh.event_booking.service;
 
 import com.vishvesh.event_booking.dto.seatavailability.SeatAvailabilityResponseDto;
 import com.vishvesh.event_booking.dto.seatavailability.SeatLockRequestDto;
-import com.vishvesh.event_booking.entity.SeatAvailability;
-import com.vishvesh.event_booking.entity.Show;
-import com.vishvesh.event_booking.entity.User;
+import com.vishvesh.event_booking.entity.*;
 import com.vishvesh.event_booking.repository.*;
 import com.vishvesh.event_booking.utils.enums.SeatStatus;
 import com.vishvesh.event_booking.utils.enums.ShowStatus;
@@ -25,10 +23,12 @@ public class SeatAvailabilityService {
     private final SeatAvailabilityRepository seatAvailabilityRepository;
     private final UserRepository userRepository;
     private final ShowRepository showRepository;
-    private final UserPenaltyRepository  userPenaltyRepository;
+    private final UserPenaltyRepository userPenaltyRepository;
+    private final BookingRepository bookingRepository;
 
-    private static final int LOCK_DURATION_MINS= 15;
+    private static final int LOCK_DURATION_MINS = 10; // Aligned with booking expiry window in BookingService
     private static final int MAX_SEATS_PER_REQUEST = 6;
+    private static final int PENALTY_BLOCK_THRESHOLD = 3; // Block user only after 3 consecutive abandons
 
     public Map<String, Object> getSeatsForShow(UUID showId) {
         if (!showRepository.existsById(showId)) {
@@ -60,16 +60,16 @@ public class SeatAvailabilityService {
         }
 
 
-        boolean isPenalized = userPenaltyRepository.existsByUserIdAndShowIdAndPenaltyExpiryAfter(
-                request.getUserId(), showId, OffsetDateTime.now()
-        );
+        boolean isPenalized = userPenaltyRepository
+                .existsByUserIdAndShowIdAndPenaltyExpiryAfterAndFailedLockCountGreaterThanEqual(
+                        request.getUserId(), showId, OffsetDateTime.now(), PENALTY_BLOCK_THRESHOLD);
 
         if (isPenalized) {
             throw new IllegalStateException("You recently let a reservation expire. Please wait 15 minutes before trying to book seats for this show again.");
         }
         
         List<SeatAvailability> previousLocks = seatAvailabilityRepository
-                .findByShowIdAndLockedByIdAndSeatStatus(showId, user.getUserId(), SeatStatus.LOCKED);
+                .findByShowIdAndLockedByIdAndSeatStatus(showId, user.getId(), SeatStatus.LOCKED);
         if (!previousLocks.isEmpty()) {
             previousLocks.forEach(seat -> {
                 seat.setSeatStatus(SeatStatus.AVAILABLE);
@@ -105,13 +105,36 @@ public class SeatAvailabilityService {
         );
     }
 
-    private SeatAvailabilityResponseDto mapToSeatAvailabilityDto(@NonNull SeatAvailability seat){
+    /**
+     * Transitions all seats linked to a confirmed booking from LOCKED → BOOKED.
+     * Called by BookingService.confirmPayment() after signature verification passes.
+     */
+    @Transactional
+    public void markSeatsAsBooked(UUID bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalStateException("Booking not found: " + bookingId));
+
+        List<SeatAvailability> seats = booking.getItems().stream()
+                .map(BookingItem::getSeatAvailability)
+                .toList();
+
+        seats.forEach(seat -> {
+            seat.setSeatStatus(SeatStatus.BOOKED);
+            seat.setLockedBy(null);
+            seat.setLockedAt(null);
+            seat.setLockExpiry(null);
+        });
+
+        seatAvailabilityRepository.saveAll(seats);
+    }
+
+    private SeatAvailabilityResponseDto mapToSeatAvailabilityDto(@NonNull SeatAvailability seat) {
         return SeatAvailabilityResponseDto.builder()
                 .id(seat.getId())
                 .showId(seat.getShow().getId())
                 .seatStatus(seat.getSeatStatus())
                 .seatId(seat.getSeat().getId())
-                .lockedByUserId(seat.getLockedBy().getUserId())
+                .lockedByUserId(seat.getLockedBy() != null ? seat.getLockedBy().getId() : null)
                 .build();
     }
 }
