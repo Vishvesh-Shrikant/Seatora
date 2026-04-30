@@ -23,7 +23,7 @@ public class MovieController {
     }
 
     @PostMapping("/addMovie")
-    @PreAuthorize("hasAuthority('ADMIN")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Map<String, Object>> addMovie(@RequestBody MovieRequestDto movieRequest){
         return ResponseEntity.status(201).body(movieService.addMovie(movieRequest));
     }

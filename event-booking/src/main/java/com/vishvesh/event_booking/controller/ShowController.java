@@ -1,7 +1,6 @@
 package com.vishvesh.event_booking.controller;
 
 import com.vishvesh.event_booking.dto.show.ShowRequestDto;
-import com.vishvesh.event_booking.entity.Show;
 import com.vishvesh.event_booking.service.ShowService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

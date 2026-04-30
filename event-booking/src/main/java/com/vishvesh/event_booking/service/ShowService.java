@@ -5,10 +5,13 @@ import com.vishvesh.event_booking.entity.Screen;
 import com.vishvesh.event_booking.entity.Show;
 import com.vishvesh.event_booking.repository.MovieRepository;
 import com.vishvesh.event_booking.repository.ScreenRepository;
+import com.vishvesh.event_booking.repository.SeatAvailabilityRepository;
+import com.vishvesh.event_booking.repository.SeatRepository;
 import com.vishvesh.event_booking.repository.ShowRepository;
 import com.vishvesh.event_booking.dto.show.ShowRequestDto;
 import com.vishvesh.event_booking.dto.show.ShowResponseDto;
 import com.vishvesh.event_booking.utils.enums.ShowStatus;
+import com.vishvesh.event_booking.utils.DateTimeUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
@@ -28,6 +31,8 @@ public class ShowService {
     private final ShowRepository showRepository;
     private final MovieRepository movieRepository;
     private final ScreenRepository screenRepository;
+    private final SeatRepository seatRepository;
+    private final SeatAvailabilityRepository seatAvailabilityRepository;
 
     //for admin
     public Map<String, Object> getAllShowsByMovie(UUID movieId){
@@ -44,9 +49,8 @@ public class ShowService {
         if(movieRepository.findByIdAndIsActiveTrue(movieId).isEmpty()){
             throw new IllegalStateException("Movie is not active and is deleted");
         }
-        ZoneId theaterZone = ZoneId.systemDefault();
-        OffsetDateTime startOfDay = targetDate.atStartOfDay(theaterZone).toOffsetDateTime();
-        OffsetDateTime endOfDay = targetDate.atTime(LocalTime.MAX).atZone(theaterZone).toOffsetDateTime();
+        OffsetDateTime startOfDay = DateTimeUtil.getStartOfDay(targetDate);
+        OffsetDateTime endOfDay = DateTimeUtil.getEndOfDay(targetDate);
 
         List<Show> showsOfMovie= showRepository.findByMovieIdAndShowStatusAndShowDatetimeBetween(movieId, ShowStatus.SCHEDULED, startOfDay, endOfDay);
 
@@ -66,9 +70,8 @@ public class ShowService {
     //for admin
     public Map<String, Object> getAllShowsBetweenDates(LocalDate start, LocalDate end){
 
-        ZoneId theaterZone = ZoneId.systemDefault();
-        OffsetDateTime startDate = start.atStartOfDay(theaterZone).toOffsetDateTime();
-        OffsetDateTime endDate = end.atTime(LocalTime.MAX).atZone(theaterZone).toOffsetDateTime();
+        OffsetDateTime startDate = DateTimeUtil.getStartOfDay(start);
+        OffsetDateTime endDate = DateTimeUtil.getEndOfDay(end);
 
         List<Show> showsBetweenDates = showRepository.findByShowDatetimeBetween(startDate, endDate);
 
@@ -98,7 +101,19 @@ public class ShowService {
                 .build();
 
         Show savedShow = showRepository.save(show);
-        return Map.of("success", true, "message", "New show added successfully", "shows", mapToShowResponseDto(savedShow));
+
+        // NEW: Automatically populate SeatAvailability for all active seats in this screen
+        List<com.vishvesh.event_booking.entity.Seat> screenSeats = seatRepository.findByScreenIdAndIsActiveTrue(screen.getId());
+        List<com.vishvesh.event_booking.entity.SeatAvailability> availabilities = screenSeats.stream().map(seat ->
+                com.vishvesh.event_booking.entity.SeatAvailability.builder()
+                        .show(savedShow)
+                        .seat(seat)
+                        .seatStatus(com.vishvesh.event_booking.utils.enums.SeatStatus.AVAILABLE)
+                        .build()
+        ).toList();
+        seatAvailabilityRepository.saveAll(availabilities);
+
+        return Map.of("success", true, "message", "New show added successfully and seats initialized", "shows", mapToShowResponseDto(savedShow));
     }
 
     @Transactional

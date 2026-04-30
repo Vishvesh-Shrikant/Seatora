@@ -7,7 +7,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.sql.Types;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 

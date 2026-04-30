@@ -1,7 +1,6 @@
 package com.vishvesh.event_booking.service;
 
 import com.vishvesh.event_booking.entity.Theatre;
-import com.vishvesh.event_booking.repository.ScreenRepository;
 import com.vishvesh.event_booking.repository.TheatreRepository;
 import com.vishvesh.event_booking.dto.theatre.TheatreReponseDto;
 import com.vishvesh.event_booking.dto.theatre.TheatreRequestDto;
@@ -21,7 +20,6 @@ import java.util.UUID;
 public class TheatreService {
 
     private final TheatreRepository theatreRepository;
-    private final ScreenRepository screenRepository;
 
     public Map<String , Object> getTheatres(String city)
     {
