@@ -26,7 +26,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", nullable = false, updatable = false, columnDefinition = "TEXT")
     @JdbcTypeCode(Types.VARCHAR)
-    private UUID userId;
+    private UUID id;
 
     @Column(name = "name", nullable = false, columnDefinition = "TEXT")
     private String name;

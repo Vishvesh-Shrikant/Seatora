@@ -27,4 +27,9 @@ public class UserBookingPenalty {
     @Column(name = "penalty_expiry", nullable = false)
     private OffsetDateTime penaltyExpiry;
 
+    // Tracks how many times the user has abandoned a lock for this show.
+    // A hard block is only applied once this exceeds the threshold (default: 3).
+    @Builder.Default
+    @Column(name = "failed_lock_count", nullable = false)
+    private int failedLockCount = 1;
 }
