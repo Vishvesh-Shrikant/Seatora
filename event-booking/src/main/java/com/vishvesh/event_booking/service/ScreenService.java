@@ -1,11 +1,14 @@
 package com.vishvesh.event_booking.service;
 
 import com.vishvesh.event_booking.entity.Screen;
+import com.vishvesh.event_booking.entity.Show;
 import com.vishvesh.event_booking.entity.Theatre;
 import com.vishvesh.event_booking.repository.ScreenRepository;
+import com.vishvesh.event_booking.repository.ShowRepository;
 import com.vishvesh.event_booking.repository.TheatreRepository;
 import com.vishvesh.event_booking.dto.screen.ScreenRequestDto;
 import com.vishvesh.event_booking.dto.screen.ScreenResponseDto;
+import com.vishvesh.event_booking.utils.enums.ShowStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +26,7 @@ public class ScreenService {
 
     private final ScreenRepository screenRepository;
     private final TheatreRepository theatreRepository;
+    private final ShowRepository showRepository;
 
     @Transactional
     public Map<String, Object> createScreen(@NonNull ScreenRequestDto request) {
@@ -80,13 +84,25 @@ public class ScreenService {
 
     @Transactional
     public Map<String, Object> deactivateScreen(UUID screenID) {
-        Screen screen = screenRepository.findById(screenID).orElseThrow(() -> new IllegalArgumentException("Screen not found"));
+        Screen screen = screenRepository.findById(screenID)
+                .orElseThrow(() -> new IllegalArgumentException("Screen not found"));
+
+        if (!screen.getIsActive()) {
+            throw new IllegalStateException("Screen is already deactivated.");
+        }
+
+        // FIX 1.2: Cancel all SCHEDULED shows on this screen before deactivating it
+        List<Show> scheduledShows = showRepository.findByScreenIdAndShowStatus(
+                screenID, ShowStatus.SCHEDULED);
+        scheduledShows.forEach(show -> show.setShowStatus(ShowStatus.CANCELLED));
+        showRepository.saveAll(scheduledShows);
+        log.info("Cancelled {} scheduled show(s) for screenId={}", scheduledShows.size(), screenID);
 
         screen.setIsActive(false);
-        screen = screenRepository.save(screen);
+        screenRepository.save(screen);
 
-        log.info("Screen {} deleted", screen.getScreenNo());
-        return Map.of("success", true, "message", "Screen deactivated successfully", "screen", screen);
+        log.info("Screen {} deactivated", screen.getScreenNo());
+        return Map.of("success", true, "message", "Screen deactivated and all scheduled shows cancelled.");
     }
 
     private ScreenResponseDto mapToScreenResponse(@NonNull Screen screen) {

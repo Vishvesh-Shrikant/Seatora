@@ -17,4 +17,6 @@ public interface ShowRepository extends JpaRepository<Show, UUID> {
 
     List<Show> findByShowStatus(ShowStatus status);  //admin only
     List<Show> findByShowDatetimeBetween(OffsetDateTime start, OffsetDateTime end);
+    List<Show> findByScreenIdAndShowStatus(UUID screenId, ShowStatus status);
+    List<Show> findByMovieIdAndShowStatus(UUID movieId, ShowStatus status);
 }

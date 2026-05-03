@@ -10,6 +10,7 @@ import java.util.UUID;
 @Repository
 public interface ScreenRepository extends JpaRepository<Screen, UUID> {
     List<Screen> findByTheaterIdAndIsActiveTrue(UUID theaterId);
+    List<Screen> findByTheaterId(UUID theaterId);
     boolean existsByTheaterIdAndScreenNoAndIsActiveTrue(UUID theaterId, String screenNo);
     boolean existsByTheaterIdAndIsActiveTrue(UUID theaterId);
 }
