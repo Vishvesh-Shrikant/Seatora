@@ -14,4 +14,5 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     List<Booking> findByUserIdOrderByBookedAtDesc(UUID userId);
     List<Booking> findByBookingStatus(BookingStatus status);
     List<Booking> findByBookingStatusAndBookedAtBefore(BookingStatus status, OffsetDateTime time);
+    List<Booking> findByBookingStatusAndIsConfirmationEmailSentFalse(BookingStatus status);
 }

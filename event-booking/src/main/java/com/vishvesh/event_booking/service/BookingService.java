@@ -32,6 +32,7 @@ public class BookingService {
     private final QrCodeService qrCodeService;
     private final PaymentGatewayService paymentGatewayService;
     private final SeatAvailabilityService seatAvailabilityService;
+    private final EmailService emailService;
 
 
     @Transactional
@@ -124,6 +125,13 @@ public class BookingService {
         bookingRepository.save(booking);
 
         seatAvailabilityService.markSeatsAsBooked(booking.getId());
+
+        // Generate QR code and dispatch confirmation email asynchronously
+        String ticketData = String.format("BOOKING:%s|USER:%s",
+                booking.getId().toString(),
+                booking.getUser().getId().toString());
+        byte[] qrCodeImage = qrCodeService.generateTicketQrCode(ticketData);
+        emailService.sendBookingConfirmation(booking.getId(), qrCodeImage);
 
         log.info("Payment confirmed: bookingId={} paymentId={}", booking.getId(), paymentId);
 

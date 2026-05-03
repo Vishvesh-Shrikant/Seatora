@@ -56,6 +56,10 @@ public class Booking {
     @Column(name="is_scanned", nullable = false)
     private boolean isScanned = false;
 
+    @Builder.Default
+    @Column(name="is_confirmation_email_sent", nullable = false)
+    private boolean isConfirmationEmailSent = false;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
