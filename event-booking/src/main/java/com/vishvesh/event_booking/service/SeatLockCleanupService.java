@@ -2,6 +2,7 @@ package com.vishvesh.event_booking.service;
 
 import com.vishvesh.event_booking.entity.SeatAvailability;
 import com.vishvesh.event_booking.entity.UserBookingPenalty;
+
 import com.vishvesh.event_booking.repository.SeatAvailabilityRepository;
 import com.vishvesh.event_booking.repository.UserPenaltyRepository;
 import com.vishvesh.event_booking.utils.enums.SeatStatus;
@@ -12,7 +13,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -20,7 +24,8 @@ import java.util.List;
 public class SeatLockCleanupService {
 
     private final SeatAvailabilityRepository seatAvailabilityRepository;
-    private final UserPenaltyRepository penaltyRepository; // <-- New repo
+    private final UserPenaltyRepository penaltyRepository;
+    private final BookingService bookingService;
 
     private static final int PENALTY_MINUTES = 15;
 
@@ -32,16 +37,20 @@ public class SeatLockCleanupService {
                 .findBySeatStatusAndLockExpiryBefore(SeatStatus.LOCKED, now);
 
         if (!expiredSeats.isEmpty()) {
+
+            Set<String> processedCarts = new HashSet<>();
             expiredSeats.forEach(seat -> {
-                // 1. Give the user a penalty BEFORE we wipe their name from the seat
                 if (seat.getLockedBy() != null) {
-                    UserBookingPenalty penalty = UserBookingPenalty.builder()
-                            .userId(seat.getLockedBy().getUserId())
-                            .showId(seat.getShow().getId())
-                            .penaltyExpiry(OffsetDateTime.now().plusMinutes(PENALTY_MINUTES))
-                            .build();
-                    penaltyRepository.save(penalty);
+                    String cartKey = seat.getLockedBy().getId() + ":" + seat.getShow().getId();
+
+                    if (processedCarts.add(cartKey)) {
+                        recordOrIncrementPenalty(seat.getLockedBy().getId(), seat.getShow().getId());
+                    }
                 }
+            });
+
+            // Step 2: Now release all the seats.
+            expiredSeats.forEach(seat -> {
                 seat.setSeatStatus(SeatStatus.AVAILABLE);
                 seat.setLockedBy(null);
                 seat.setLockedAt(null);
@@ -49,6 +58,30 @@ public class SeatLockCleanupService {
             });
 
             seatAvailabilityRepository.saveAll(expiredSeats);
+            bookingService.failExpiredPendingBookings();
         }
+    }
+
+    private void recordOrIncrementPenalty(UUID userId, UUID showId) {
+        penaltyRepository.findByUserIdAndShowId(userId, showId)
+                .ifPresentOrElse(
+                        existing -> {
+                            existing.setFailedLockCount(existing.getFailedLockCount() + 1);
+                            existing.setPenaltyExpiry(OffsetDateTime.now().plusMinutes(PENALTY_MINUTES));
+                            penaltyRepository.save(existing);
+                            log.warn("User {} has now abandoned seats {} time(s) for show {}",
+                                    userId, existing.getFailedLockCount(), showId);
+                        },
+                        () -> {
+                            UserBookingPenalty penalty = UserBookingPenalty.builder()
+                                    .userId(userId)
+                                    .showId(showId)
+                                    .failedLockCount(1)
+                                    .penaltyExpiry(OffsetDateTime.now().plusMinutes(PENALTY_MINUTES))
+                                    .build();
+                            penaltyRepository.save(penalty);
+                            log.info("First abandonment recorded for user {} on show {}", userId, showId);
+                        }
+                );
     }
 }
