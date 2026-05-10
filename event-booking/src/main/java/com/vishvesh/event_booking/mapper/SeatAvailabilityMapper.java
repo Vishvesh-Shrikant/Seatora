@@ -10,7 +10,7 @@ public class SeatAvailabilityMapper {
                 .id(seat.getId())
                 .showId(seat.getShow().getId())
                 .seatStatus(seat.getSeatStatus())
-                .seatId(seat.getSeat().getId())
+                .seat(SeatMapper.mapToSeatResponseDto(seat.getSeat()))
                 .lockedByUserId(seat.getLockedBy() != null ? seat.getLockedBy().getId() : null)
                 .build();
     }

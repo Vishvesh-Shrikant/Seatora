@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Data
@@ -18,4 +19,5 @@ public class SeatResponseDto {
     private UUID screenId;
     private String seatNo;
     private SeatType seatType;
+    private BigDecimal basePrice;
 }

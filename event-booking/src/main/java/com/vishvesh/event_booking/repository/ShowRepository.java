@@ -19,4 +19,10 @@ public interface ShowRepository extends JpaRepository<Show, UUID> {
     List<Show> findByShowDatetimeBetween(OffsetDateTime start, OffsetDateTime end);
     List<Show> findByScreenIdAndShowStatus(UUID screenId, ShowStatus status);
     List<Show> findByMovieIdAndShowStatus(UUID movieId, ShowStatus status);
+
+    @org.springframework.data.jpa.repository.Query("SELECT s FROM Show s WHERE s.screen.id = :screenId " +
+            "AND s.showStatus != 'CANCELLED' " +
+            "AND s.showDatetime < :end " +
+            "AND s.endDatetime > :start")
+    List<Show> findOverlappingShows(UUID screenId, OffsetDateTime start, OffsetDateTime end);
 }

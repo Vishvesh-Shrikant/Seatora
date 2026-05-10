@@ -10,6 +10,7 @@ public class SeatMapper {
                 .seatId(seat.getId())
                 .seatNo(seat.getSeatNo())
                 .screenId(seat.getScreen().getId())
+                .basePrice(seat.getBasePrice())
                 .seatType(seat.getSeatType())
                 .build();
     }

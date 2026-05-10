@@ -19,5 +19,5 @@ public class ShowRequestDto {
     private UUID screenId;
     private OffsetDateTime showDatetime;
     private ShowStatus showStatus;
-    private BigDecimal price;
+    private BigDecimal showtimeMultiplier;
 }

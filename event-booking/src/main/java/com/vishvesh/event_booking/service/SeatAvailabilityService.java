@@ -35,9 +35,12 @@ public class SeatAvailabilityService {
         }
         List<SeatAvailability> seats = seatAvailabilityRepository.findByShowId(showId);
 
+        Show show = showRepository.findById(showId).orElseThrow(() -> new IllegalStateException("Show does not exist"));
+
         return Map.of(
                 "success", true,
                 "message", "Seats retrieved successfully",
+                "showtimeMultiplier", show.getShowtimeMultiplier(),
                 "seats", seats.stream().map(SeatAvailabilityMapper::mapToSeatAvailabilityDto).toList()
         );
     }

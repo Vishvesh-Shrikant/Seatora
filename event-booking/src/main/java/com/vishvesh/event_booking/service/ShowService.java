@@ -90,12 +90,23 @@ public class ShowService {
 
         Screen screen=screenRepository.findById(showRequestDto.getScreenId()).orElseThrow(()-> new IllegalStateException("Screen is not active and is deleted"));
 
+        // Calculate end time (movie duration + 30 mins buffer)
+        OffsetDateTime showStart = showRequestDto.getShowDatetime();
+        OffsetDateTime showEnd = showStart.plusMinutes(movie.getDurationMinutes() + 30);
+
+        // Check for clashing shows
+        List<Show> clashingShows = showRepository.findOverlappingShows(screen.getId(), showStart, showEnd);
+        if (!clashingShows.isEmpty()) {
+            throw new IllegalStateException("Show time clashes with an existing show in this screen.");
+        }
+
         Show show = Show.builder()
                 .showStatus(showRequestDto.getShowStatus())
                 .movie(movie)
                 .screen(screen)
-                .basePrice(showRequestDto.getPrice())
-                .showDatetime(showRequestDto.getShowDatetime())
+                .showtimeMultiplier(showRequestDto.getShowtimeMultiplier())
+                .showDatetime(showStart)
+                .endDatetime(showEnd)
                 .build();
 
         Show savedShow = showRepository.save(show);
@@ -121,12 +132,23 @@ public class ShowService {
 
         Screen screen=screenRepository.findById(showRequestDto.getScreenId()).orElseThrow(()-> new IllegalStateException("Screen is not active and is deleted"));
 
+        // Calculate end time
+        OffsetDateTime showStart = showRequestDto.getShowDatetime();
+        OffsetDateTime showEnd = showStart.plusMinutes(movie.getDurationMinutes() + 30);
+
+        // Check for clashing shows (excluding the current show itself)
+        List<Show> clashingShows = showRepository.findOverlappingShows(screen.getId(), showStart, showEnd)
+                .stream().filter(s -> !s.getId().equals(showId)).toList();
+        if (!clashingShows.isEmpty()) {
+            throw new IllegalStateException("Show time clashes with an existing show in this screen.");
+        }
+
         show.setShowStatus(showRequestDto.getShowStatus());
-        show.setShowDatetime(showRequestDto.getShowDatetime());
+        show.setShowDatetime(showStart);
+        show.setEndDatetime(showEnd);
         show.setMovie(movie);
         show.setScreen(screen);
-        show.setBasePrice(showRequestDto.getPrice());
-
+        show.setShowtimeMultiplier(showRequestDto.getShowtimeMultiplier());
         Show updatedShow= showRepository.save(show);
 
         return Map.of("success", true, "message", "Show updated successfully", "shows", ShowMapper.mapToShowResponseDto(updatedShow));

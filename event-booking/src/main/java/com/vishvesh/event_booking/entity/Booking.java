@@ -57,7 +57,7 @@ public class Booking {
     private boolean isScanned = false;
 
     @Builder.Default
-    @Column(name="is_confirmation_email_sent", nullable = false)
+    @Column(name="is_confirmation_email_sent")
     private boolean isConfirmationEmailSent = false;
 
     @CreationTimestamp

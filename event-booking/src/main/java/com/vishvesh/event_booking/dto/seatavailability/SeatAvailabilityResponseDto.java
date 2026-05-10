@@ -1,5 +1,6 @@
 package com.vishvesh.event_booking.dto.seatavailability;
 
+import com.vishvesh.event_booking.dto.seat.SeatResponseDto;
 import com.vishvesh.event_booking.utils.enums.SeatStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,7 +16,7 @@ import java.util.UUID;
 public class SeatAvailabilityResponseDto {
     UUID id;
     UUID showId;
-    UUID seatId;
+    SeatResponseDto seat;
     UUID lockedByUserId;
     SeatStatus seatStatus;
 

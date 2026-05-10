@@ -16,6 +16,10 @@ import org.jspecify.annotations.NonNull;
 import com.vishvesh.event_booking.mapper.ScreenMapper;
 import org.springframework.stereotype.Service;
 
+import com.vishvesh.event_booking.repository.SeatRepository;
+import com.vishvesh.event_booking.entity.Seat;
+import com.vishvesh.event_booking.dto.screen.LayoutRowDto;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -28,6 +32,7 @@ public class ScreenService {
     private final ScreenRepository screenRepository;
     private final TheatreRepository theatreRepository;
     private final ShowRepository showRepository;
+    private final SeatRepository seatRepository;
 
     @Transactional
     public Map<String, Object> createScreen(@NonNull ScreenRequestDto request) {
@@ -41,13 +46,41 @@ public class ScreenService {
             throw new IllegalStateException("Screen " + request.getScreenNo()+ " already exists and is active in this theater");
         }
 
+        int calculatedTotalSeats = 0;
+        if (request.getRows() != null) {
+            calculatedTotalSeats = request.getRows().stream().mapToInt(LayoutRowDto::getCount).sum();
+        } else if (request.getTotalSeats() != null) {
+            calculatedTotalSeats = request.getTotalSeats();
+        } else {
+            throw new IllegalArgumentException("Total seats or layout rows must be provided");
+        }
+
         Screen screen = Screen.builder()
                 .theater(theatre)
                 .screenNo(request.getScreenNo())
-                .totalSeats(request.getTotalSeats())
+                .totalSeats(calculatedTotalSeats)
                 .build();
 
         screen = screenRepository.save(screen);
+
+        if (request.getRows() != null && !request.getRows().isEmpty()) {
+            List<Seat> seats = new ArrayList<>();
+            for (LayoutRowDto row : request.getRows()) {
+                for (int i = 1; i <= row.getCount(); i++) {
+                    Seat seat = Seat.builder()
+                            .screen(screen)
+                            .seatNo(row.getName() + i)
+                            .seatType(row.getType())
+                            .basePrice(row.getBasePrice())
+                            .isActive(true)
+                            .build();
+                    seats.add(seat);
+                }
+            }
+            seatRepository.saveAll(seats);
+            log.info("Generated {} seats for screen {}", seats.size(), screen.getScreenNo());
+        }
+
         log.info("Added Screen {} to Theater {}", screen.getScreenNo(), theatre.getName());
         return Map.of("success", true, "message", "Screen added successfully", "screen", ScreenMapper.mapToScreenResponse(screen));
     }

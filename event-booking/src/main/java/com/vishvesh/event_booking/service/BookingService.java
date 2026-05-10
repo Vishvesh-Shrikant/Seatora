@@ -51,11 +51,15 @@ public class BookingService {
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<BookingItem> items = new ArrayList<>();
 
-        for (SeatAvailability seat : lockedSeats) {
-            BigDecimal price = seat.getShow().getBasePrice();
+        for (SeatAvailability seatAvail : lockedSeats) {
+            BigDecimal seatPrice = seatAvail.getSeat().getBasePrice();
+            BigDecimal multiplier = seatAvail.getShow().getShowtimeMultiplier();
+
+            BigDecimal price = seatPrice.multiply(multiplier);
+
             totalAmount = totalAmount.add(price);
             items.add(BookingItem.builder()
-                    .seatAvailability(seat)
+                    .seatAvailability(seatAvail)
                     .price(price)
                     .build());
         }

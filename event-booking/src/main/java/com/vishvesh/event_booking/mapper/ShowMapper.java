@@ -13,7 +13,7 @@ public class ShowMapper {
                 .movie(MovieMapper.mapToMovieResponseDto(show.getMovie()))
                 .screen(ScreenMapper.mapToScreenResponse(show.getScreen()))
                 .theatre(TheatreMapper.mapToTheaterResponse(show.getScreen().getTheater()))
-                .price(show.getBasePrice())
+                .showtimeMultiplier(show.getShowtimeMultiplier())
                 .build();
     }
 }

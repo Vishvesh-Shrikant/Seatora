@@ -6,6 +6,8 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+
+import java.math.BigDecimal;
 import java.sql.Types;
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -31,6 +33,9 @@ public class Seat {
 
     @Column(name = "seat_no", nullable = false)
     private String seatNo;
+
+    @Column(name = "base_price", nullable = false)
+    private BigDecimal basePrice;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "seat_type", nullable = false)

@@ -37,9 +37,11 @@ public class Show {
     @Column(name = "show_datetime", nullable = false)
     private OffsetDateTime showDatetime;
 
-    // NEW: Base price for this specific show time
-    @Column(name = "base_price", nullable = false)
-    private BigDecimal basePrice;
+    @Column(name = "end_datetime", nullable = false)
+    private OffsetDateTime endDatetime;
+
+    @Column(name = "showtime_multiplier", nullable = false)
+    private BigDecimal showtimeMultiplier;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)

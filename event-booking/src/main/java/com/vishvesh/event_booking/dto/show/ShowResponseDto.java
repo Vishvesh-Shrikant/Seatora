@@ -24,5 +24,5 @@ public class ShowResponseDto {
     private TheatreResponseDto theatre;
     private OffsetDateTime showDatetime;
     private ShowStatus showStatus;
-    private BigDecimal price;
+    private BigDecimal showtimeMultiplier;
 }
