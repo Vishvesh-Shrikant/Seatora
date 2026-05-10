@@ -12,7 +12,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TheatreReponseDto {
+public class TheatreResponseDto {
     @NotBlank
     private UUID theatreId;
     @NotBlank

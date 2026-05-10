@@ -1,6 +1,5 @@
 package com.vishvesh.event_booking.service;
 
-import com.vishvesh.event_booking.dto.seatavailability.SeatAvailabilityResponseDto;
 import com.vishvesh.event_booking.dto.seatavailability.SeatLockRequestDto;
 import com.vishvesh.event_booking.entity.*;
 import com.vishvesh.event_booking.repository.*;
@@ -8,7 +7,7 @@ import com.vishvesh.event_booking.utils.enums.SeatStatus;
 import com.vishvesh.event_booking.utils.enums.ShowStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.NonNull;
+import com.vishvesh.event_booking.mapper.SeatAvailabilityMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
@@ -39,7 +38,7 @@ public class SeatAvailabilityService {
         return Map.of(
                 "success", true,
                 "message", "Seats retrieved successfully",
-                "seats", seats.stream().map(this::mapToSeatAvailabilityDto).toList()
+                "seats", seats.stream().map(SeatAvailabilityMapper::mapToSeatAvailabilityDto).toList()
         );
     }
 
@@ -101,7 +100,7 @@ public class SeatAvailabilityService {
         return Map.of(
                 "success", true,
                 "message", "Seats retrieved successfully",
-                "seats", lockedSeats.stream().map(this::mapToSeatAvailabilityDto).toList()
+                "seats", lockedSeats.stream().map(SeatAvailabilityMapper::mapToSeatAvailabilityDto).toList()
         );
     }
 
@@ -128,13 +127,4 @@ public class SeatAvailabilityService {
         seatAvailabilityRepository.saveAll(seats);
     }
 
-    private SeatAvailabilityResponseDto mapToSeatAvailabilityDto(@NonNull SeatAvailability seat) {
-        return SeatAvailabilityResponseDto.builder()
-                .id(seat.getId())
-                .showId(seat.getShow().getId())
-                .seatStatus(seat.getSeatStatus())
-                .seatId(seat.getSeat().getId())
-                .lockedByUserId(seat.getLockedBy() != null ? seat.getLockedBy().getId() : null)
-                .build();
-    }
 }

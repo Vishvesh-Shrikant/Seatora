@@ -6,13 +6,14 @@ import com.vishvesh.event_booking.entity.Theatre;
 import com.vishvesh.event_booking.repository.ScreenRepository;
 import com.vishvesh.event_booking.repository.ShowRepository;
 import com.vishvesh.event_booking.repository.TheatreRepository;
-import com.vishvesh.event_booking.dto.theatre.TheatreReponseDto;
+import com.vishvesh.event_booking.dto.theatre.TheatreResponseDto;
 import com.vishvesh.event_booking.dto.theatre.TheatreRequestDto;
 import com.vishvesh.event_booking.utils.enums.ShowStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
+import com.vishvesh.event_booking.mapper.TheatreMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -34,8 +35,8 @@ public class TheatreService {
         List<Theatre> theatresList = (city != null && !city.isBlank())
                 ? theatreRepository.findByCityIgnoreCaseAndIsActiveTrue(city)
                 : theatreRepository.findByIsActiveTrue();
-        List<TheatreReponseDto> theatres= theatresList.stream()
-                .map(this::mapToTheaterResponse )
+        List<TheatreResponseDto> theatres= theatresList.stream()
+                .map(TheatreMapper::mapToTheaterResponse)
                 .toList();
         return Map.of("success", true,
                 "message", "Theatres retrieved successfully" ,
@@ -57,7 +58,7 @@ public class TheatreService {
         return Map.of(
                 "success", true,
                 "message", "Theater created successfully",
-                "theater", mapToTheaterResponse(theater)
+                "theater", TheatreMapper.mapToTheaterResponse(theater)
         );
     }
 
@@ -73,7 +74,7 @@ public class TheatreService {
         theatre = theatreRepository.save(theatre);
         log.info("Theater {} updated successfully", theatre.getId());
 
-        return Map.of("success", true, "message", "Theater updated successfully", "theater", mapToTheaterResponse(theatre));
+        return Map.of("success", true, "message", "Theater updated successfully", "theater", TheatreMapper.mapToTheaterResponse(theatre));
     }
 
     @Transactional
@@ -105,17 +106,5 @@ public class TheatreService {
         log.info("Theatre {} soft-deleted", id);
         return Map.of("success", true, "message", "Theater and all its screens/shows have been deactivated.");
     }
-
-
-    private TheatreReponseDto mapToTheaterResponse(@NonNull Theatre theatre) {
-        return TheatreReponseDto.builder()
-                .theatreId(theatre.getId())
-                .theatreName(theatre.getName())
-                .theatreCity(theatre.getCity())
-                .theatreAddress(theatre.getAddress())
-                .build();
-    }
-
-
 
 }

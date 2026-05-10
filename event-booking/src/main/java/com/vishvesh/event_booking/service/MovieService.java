@@ -5,11 +5,11 @@ import com.vishvesh.event_booking.entity.Show;
 import com.vishvesh.event_booking.repository.MovieRepository;
 import com.vishvesh.event_booking.repository.ShowRepository;
 import com.vishvesh.event_booking.dto.movie.MovieRequestDto;
-import com.vishvesh.event_booking.dto.movie.MovieResponseDto;
 import com.vishvesh.event_booking.utils.enums.ShowStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
+import com.vishvesh.event_booking.mapper.MovieMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -30,7 +30,7 @@ public class MovieService {
                 ? movieRepository.findByTitleContainingIgnoreCaseAndIsActiveTrue(searchTitle)
                 : movieRepository.findByIsActiveTrue();
 
-        return Map.of("success", true, "message", "Retrieved movie", "movies", movies.stream().map(this::mapToMovieResponseDto).toList());
+        return Map.of("success", true, "message", "Retrieved movie", "movies", movies.stream().map(MovieMapper::mapToMovieResponseDto).toList());
     }
 
     public Map<String, Object> addMovie(@NonNull MovieRequestDto movieRequestDto){
@@ -72,7 +72,7 @@ public class MovieService {
         movie.setMovieFormat(movieRequestDto.getMovieFormat());
         Movie updatedMovie = movieRepository.save(movie);
 
-        return Map.of("success", true, "message", "Movie updated successfully", "movie", mapToMovieResponseDto(updatedMovie));
+        return Map.of("success", true, "message", "Movie updated successfully", "movie", MovieMapper.mapToMovieResponseDto(updatedMovie));
     }
 
     public Map<String, Object> removeMovie(UUID id){
@@ -92,17 +92,4 @@ public class MovieService {
         return Map.of("success", true, "message", "Movie removed and all scheduled shows cancelled.");
     }
 
-    private MovieResponseDto mapToMovieResponseDto(@NonNull Movie movie){
-        return MovieResponseDto.builder()
-                .movieId(movie.getId())
-                .movieTitle(movie.getTitle())
-                .genre(movie.getGenre())
-                .movieDescription(movie.getDescription())
-                .language(movie.getLanguage())
-                .duration(movie.getDurationMinutes())
-                .movieFormat(movie.getMovieFormat())
-                .posterUrl(movie.getPosterUrl())
-                .releaseDate(movie.getReleaseDate())
-                .build();
-    }
 }

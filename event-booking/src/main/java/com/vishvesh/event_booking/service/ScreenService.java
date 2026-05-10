@@ -13,6 +13,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
+import com.vishvesh.event_booking.mapper.ScreenMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -48,7 +49,7 @@ public class ScreenService {
 
         screen = screenRepository.save(screen);
         log.info("Added Screen {} to Theater {}", screen.getScreenNo(), theatre.getName());
-        return Map.of("success", true, "message", "Screen added successfully", "screen", mapToScreenResponse(screen));
+        return Map.of("success", true, "message", "Screen added successfully", "screen", ScreenMapper.mapToScreenResponse(screen));
     }
 
     public Map<String, Object> getScreensByTheater(UUID theaterId) {
@@ -56,7 +57,7 @@ public class ScreenService {
             throw new IllegalArgumentException("Theater not found");
         }
         List<ScreenResponseDto> screens= screenRepository.findByTheaterIdAndIsActiveTrue(theaterId)
-                .stream().map(this::mapToScreenResponse).toList();
+                .stream().map(ScreenMapper::mapToScreenResponse).toList();
 
         return Map.of("success", true, "message", "Screens retrieved successfully", "screens", screens);
     }
@@ -104,16 +105,5 @@ public class ScreenService {
         log.info("Screen {} deactivated", screen.getScreenNo());
         return Map.of("success", true, "message", "Screen deactivated and all scheduled shows cancelled.");
     }
-
-    private ScreenResponseDto mapToScreenResponse(@NonNull Screen screen) {
-        return ScreenResponseDto.builder()
-                .screenId(screen.getId())
-                .screenNo(screen.getScreenNo())
-                .theatreId(screen.getTheater().getId())
-                .totalSeats(screen.getTotalSeats())
-                .build();
-    }
-
-
 
 }

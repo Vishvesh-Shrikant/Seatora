@@ -5,9 +5,9 @@ import com.vishvesh.event_booking.entity.Seat;
 import com.vishvesh.event_booking.repository.ScreenRepository;
 import com.vishvesh.event_booking.repository.SeatRepository;
 import com.vishvesh.event_booking.dto.seat.SeatRequestDto;
-import com.vishvesh.event_booking.dto.seat.SeatResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.vishvesh.event_booking.mapper.SeatMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -28,7 +28,7 @@ public class SeatService {
         }
         List<Seat> seatsByScreen = seatRepository.findByScreenIdAndIsActiveTrue(screenId);
 
-        return Map.of("success", true, "message", "Seats for given screen retrieved successfully", "seats", seatsByScreen.stream().map(this::mapToSeatResponseDto).toList());
+        return Map.of("success", true, "message", "Seats for given screen retrieved successfully", "seats", seatsByScreen.stream().map(SeatMapper::mapToSeatResponseDto).toList());
     }
 
     public Map<String, Object> addSeat(UUID screenId, SeatRequestDto seatRequestDto){
@@ -55,7 +55,7 @@ public class SeatService {
                 .build();
         seatRepository.save(seat);
         log.info("Seat {} added to Screen {}", seat.getSeatNo(), screen.getScreenNo());
-        return Map.of("success", true, "message", "Seat added successfully",  "seats", mapToSeatResponseDto(seat));
+        return Map.of("success", true, "message", "Seat added successfully",  "seats", SeatMapper.mapToSeatResponseDto(seat));
     }
 
     public Map<String , Object> updateSeat(UUID seatId, SeatRequestDto seatRequestDto){
@@ -76,7 +76,7 @@ public class SeatService {
         seat = seatRepository.save(seat);
 
 
-        return Map.of("success", true, "message", "Seats for given screen retrieved successfully",  "seats", mapToSeatResponseDto(seat));
+        return Map.of("success", true, "message", "Seats for given screen retrieved successfully",  "seats", SeatMapper.mapToSeatResponseDto(seat));
     }
 
     public Map<String, Object> deactivateSeat(UUID seatId){
@@ -90,15 +90,7 @@ public class SeatService {
         Seat deletedSeat = seatRepository.save(seat);
 
         log.info("Seat {} deactivated", seatId);
-        return Map.of("success", true, "message", "Seats for given screen retrieved successfully",  "seats", mapToSeatResponseDto(deletedSeat));
+        return Map.of("success", true, "message", "Seats for given screen retrieved successfully",  "seats", SeatMapper.mapToSeatResponseDto(deletedSeat));
     }
 
-    private SeatResponseDto mapToSeatResponseDto(Seat seat){
-        return SeatResponseDto.builder()
-                .seatId(seat.getId())
-                .seatNo(seat.getSeatNo())
-                .screenId(seat.getScreen().getId())
-                .seatType(seat.getSeatType())
-                .build();
-    }
 }

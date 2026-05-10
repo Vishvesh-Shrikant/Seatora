@@ -3,24 +3,21 @@ package com.vishvesh.event_booking.service;
 import com.vishvesh.event_booking.entity.Movie;
 import com.vishvesh.event_booking.entity.Screen;
 import com.vishvesh.event_booking.entity.Show;
+import com.vishvesh.event_booking.mapper.ShowMapper;
 import com.vishvesh.event_booking.repository.MovieRepository;
 import com.vishvesh.event_booking.repository.ScreenRepository;
 import com.vishvesh.event_booking.repository.SeatAvailabilityRepository;
 import com.vishvesh.event_booking.repository.SeatRepository;
 import com.vishvesh.event_booking.repository.ShowRepository;
 import com.vishvesh.event_booking.dto.show.ShowRequestDto;
-import com.vishvesh.event_booking.dto.show.ShowResponseDto;
 import com.vishvesh.event_booking.utils.enums.ShowStatus;
 import com.vishvesh.event_booking.utils.DateTimeUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -41,10 +38,11 @@ public class ShowService {
         }
         List<Show> showsOfMovie= showRepository.findByMovieId(movieId);
 
-        return Map.of("success", true, "message", "Shows retrieved successfully based on Movie", "shows", showsOfMovie.stream().map(this::mapToShowResponseDto).toList() );
+        return Map.of("success", true, "message", "Shows retrieved successfully based on Movie", "shows", showsOfMovie.stream().map(ShowMapper::mapToShowResponseDto).toList() );
     }
 
     //for user
+    @Transactional
     public Map<String, Object> getAvailableShowsOfMoviesForDate(UUID movieId, LocalDate targetDate){
         if(movieRepository.findByIdAndIsActiveTrue(movieId).isEmpty()){
             throw new IllegalStateException("Movie is not active and is deleted");
@@ -54,7 +52,7 @@ public class ShowService {
 
         List<Show> showsOfMovie= showRepository.findByMovieIdAndShowStatusAndShowDatetimeBetween(movieId, ShowStatus.SCHEDULED, startOfDay, endOfDay);
 
-        return Map.of("success", true, "message", "Shows retrieved successfully based on Movie", "shows", showsOfMovie.stream().map(this::mapToShowResponseDto).toList() );
+        return Map.of("success", true, "message", "Shows retrieved successfully based on Movie", "shows", showsOfMovie.stream().map(ShowMapper::mapToShowResponseDto).toList() );
     }
 
     //for admin
@@ -64,7 +62,7 @@ public class ShowService {
         }
         List<Show> showsOfScreen= showRepository.findByScreenId(screenId);
 
-        return Map.of("success", true, "message", "Shows retrieved successfully on basis of Screen", "shows", showsOfScreen.stream().map(this::mapToShowResponseDto).toList() );
+        return Map.of("success", true, "message", "Shows retrieved successfully on basis of Screen", "shows", showsOfScreen.stream().map(ShowMapper::mapToShowResponseDto).toList() );
     }
 
     //for admin
@@ -75,14 +73,14 @@ public class ShowService {
 
         List<Show> showsBetweenDates = showRepository.findByShowDatetimeBetween(startDate, endDate);
 
-        return Map.of("success", true, "message", "Shows retrieved successfully between given dates", "shows", showsBetweenDates.stream().map(this::mapToShowResponseDto).toList() );
+        return Map.of("success", true, "message", "Shows retrieved successfully between given dates", "shows", showsBetweenDates.stream().map(ShowMapper::mapToShowResponseDto).toList() );
     }
 
     public Map<String, Object> getAllShowsByShowStatus(String showStatus){
 
         List<Show> showsOfStatus= showRepository.findByShowStatus(ShowStatus.valueOf(showStatus));
 
-        return Map.of("success", true, "message", "Shows retrieved successfully on basis of Show Status", "shows", showsOfStatus.stream().map(this::mapToShowResponseDto).toList() );
+        return Map.of("success", true, "message", "Shows retrieved successfully on basis of Show Status", "shows", showsOfStatus.stream().map(ShowMapper::mapToShowResponseDto).toList() );
 
     }
 
@@ -113,7 +111,7 @@ public class ShowService {
         ).toList();
         seatAvailabilityRepository.saveAll(availabilities);
 
-        return Map.of("success", true, "message", "New show added successfully and seats initialized", "shows", mapToShowResponseDto(savedShow));
+        return Map.of("success", true, "message", "New show added successfully and seats initialized", "shows", ShowMapper.mapToShowResponseDto(savedShow));
     }
 
     @Transactional
@@ -131,7 +129,7 @@ public class ShowService {
 
         Show updatedShow= showRepository.save(show);
 
-        return Map.of("success", true, "message", "Show updated successfully", "shows", mapToShowResponseDto(updatedShow));
+        return Map.of("success", true, "message", "Show updated successfully", "shows", ShowMapper.mapToShowResponseDto(updatedShow));
 
     }
 
@@ -142,19 +140,9 @@ public class ShowService {
         show.setShowStatus(ShowStatus.CANCELLED);
         Show cancelledShow = showRepository.save(show);
 
-        return Map.of("success", true, "message", "Show cancelled Successfully", "shows", mapToShowResponseDto(cancelledShow));
+        return Map.of("success", true, "message", "Show cancelled Successfully", "shows", ShowMapper.mapToShowResponseDto(cancelledShow));
 
     }
 
 
-    private ShowResponseDto mapToShowResponseDto(Show show){
-        return ShowResponseDto.builder()
-                .showId(show.getId())
-                .showStatus(show.getShowStatus())
-                .showDatetime(show.getShowDatetime())
-                .movieId(show.getMovie().getId())
-                .screenId(show.getScreen().getId())
-                .price(show.getBasePrice())
-                .build();
-    }
 }
