@@ -41,6 +41,12 @@ public class ShowService {
         return Map.of("success", true, "message", "Shows retrieved successfully based on Movie", "shows", showsOfMovie.stream().map(ShowMapper::mapToShowResponseDto).toList() );
     }
 
+    public Map<String, Object> getShowById(UUID showId) {
+        Show show = showRepository.findById(showId).orElseThrow(() -> new IllegalStateException("Show doesn't exist"));
+        return Map.of("success", true, "message", "Show retrieved successfully", "show", ShowMapper.mapToShowResponseDto(show));
+    }
+
+
     //for user
     @Transactional
     public Map<String, Object> getAvailableShowsOfMoviesForDate(UUID movieId, LocalDate targetDate){

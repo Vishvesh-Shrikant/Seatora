@@ -23,6 +23,11 @@ public class ShowController {
         return ResponseEntity.status(200).body(showService.getAvailableShowsOfMoviesForDate(movieId, date));
     }
 
+    @GetMapping("/{showId}")
+    public ResponseEntity<Map<String, Object>> getShowById(@PathVariable UUID showId) {
+        return ResponseEntity.status(200).body(showService.getShowById(showId));
+    }
+
     @GetMapping("/allShowsForMovie/{movieId}")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Map<String, Object>> getAllShowsForMovie(@PathVariable UUID movieId){
