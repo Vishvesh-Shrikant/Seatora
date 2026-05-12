@@ -80,6 +80,27 @@ public class AuthService{
                 "message", "Email verified successfully");
     }
 
+    @Transactional
+    public Map<String, Object> resendEmail(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (user.getIsVerified()) {
+            return Map.of("success", false, "message", "User is already verified");
+        }
+
+        String verificationToken = UUID.randomUUID().toString();
+        user.setVerificationToken(verificationToken);
+        user.setVerificationTokenExpiresAt(OffsetDateTime.now().plusSeconds(verificationExpiry * 3600));
+        userRepository.save(user);
+
+        emailService.sendVerificationEmail(user.getEmail(), verificationToken, verificationExpiry);
+
+        log.info("Verification email resent for user: {}", user.getEmail());
+
+        return Map.of("success", true, "message", "Verification email resent successfully");
+    }
+
     public Map<String, Object> login(@NonNull LoginDto request) {
         User user = userRepository.findByEmail(request.getEmail().toLowerCase())
                 .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));

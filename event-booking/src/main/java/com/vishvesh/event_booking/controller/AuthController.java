@@ -44,6 +44,16 @@ public class AuthController {
         return ResponseEntity.status(200).body(authService.verifyEmail(token));
     }
 
+    @PostMapping("/resendEmail")
+    public ResponseEntity<Map<String, Object>> resendEmail(@RequestBody @NonNull Map<String, String> request) {
+        String userIdStr = request.get("userId");
+        if (userIdStr == null || userIdStr.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "userId is required"));
+        }
+        java.util.UUID userId = java.util.UUID.fromString(userIdStr);
+        return ResponseEntity.ok(authService.resendEmail(userId));
+    }
+
     @PostMapping("/logout")
     public ResponseEntity<Map<String, String>> logout(HttpServletResponse response) {
         cookieUtil.clearJwtCookie(response);
