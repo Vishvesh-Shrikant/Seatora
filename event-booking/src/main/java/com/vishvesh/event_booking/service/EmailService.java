@@ -2,7 +2,9 @@ package com.vishvesh.event_booking.service;
 
 import com.vishvesh.event_booking.entity.Booking;
 import com.vishvesh.event_booking.entity.BookingItem;
+import com.vishvesh.event_booking.repository.BookingRepository;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,24 +12,21 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-
 import java.time.format.DateTimeFormatter;
 
 @Service
 @Slf4j
 public class EmailService {
-
     private final JavaMailSender mailSender;
     private final String baseurl;
     private final String fromEmail;
-    private final com.vishvesh.event_booking.repository.BookingRepository bookingRepository;
+    private final BookingRepository bookingRepository;
 
     public EmailService(JavaMailSender mailSender, 
                         @Value("${BASE_URL}") String baseurl, 
                         @Value("${EMAIL_USERNAME}") String fromEmail,
-                        com.vishvesh.event_booking.repository.BookingRepository bookingRepository) {
+                        BookingRepository bookingRepository) {
         this.mailSender = mailSender;
         this.baseurl = baseurl;
         this.fromEmail = fromEmail;
@@ -47,15 +46,14 @@ public class EmailService {
         }
     }
 
-
-    @Async
+    @Transactional
     public void sendBookingConfirmation(java.util.UUID bookingId, byte[] qrCodeImage) {
         try {
             Booking booking = bookingRepository.findById(bookingId)
                     .orElseThrow(() -> new IllegalArgumentException("Booking not found: " + bookingId));
 
             MimeMessage message = mailSender.createMimeMessage();
-            
+
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setFrom(fromEmail);
@@ -114,10 +112,11 @@ public class EmailService {
             bookingRepository.save(booking);
 
         } catch (Exception ex) {
-            // Non-fatal: log the error but do NOT throw, so the booking confirmation is not rolled back
             log.error("Failed to send booking confirmation email for bookingId={}, error={}", bookingId, ex.getMessage());
+            throw new RuntimeException("Email delivery failed, let RabbitMQ retry", ex);
         }
     }
+
 
     private @NonNull SimpleMailMessage getMailMessage(String toEmail, long expiry, String link) {
         SimpleMailMessage message = new SimpleMailMessage();

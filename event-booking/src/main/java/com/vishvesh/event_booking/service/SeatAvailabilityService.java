@@ -60,8 +60,6 @@ public class SeatAvailabilityService {
         if (show.getShowStatus() != ShowStatus.SCHEDULED) {
             throw new IllegalStateException("Tickets cannot be booked for a " + show.getShowStatus() + " show.");
         }
-
-
         boolean isPenalized = userPenaltyRepository
                 .existsByUserIdAndShowIdAndPenaltyExpiryAfterAndFailedLockCountGreaterThanEqual(
                         request.getUserId(), showId, OffsetDateTime.now(), PENALTY_BLOCK_THRESHOLD);
@@ -83,13 +81,12 @@ public class SeatAvailabilityService {
         }
 
         List<SeatAvailability> targetSeats = seatAvailabilityRepository
-                .findByShowIdAndSeatIdIn(showId, request.getSeatIds());
-
-        OffsetDateTime now = OffsetDateTime.now();
+                .findByShowIdAndSeatIdInAndSeatStatus(showId, request.getSeatIds(), SeatStatus.AVAILABLE);
 
         if (targetSeats.size() != request.getSeatIds().size()) {
             throw new IllegalStateException("One or more seats do not exist for this show");
         }
+        OffsetDateTime now = OffsetDateTime.now();
         OffsetDateTime expiryTime = now.plusMinutes(LOCK_DURATION_MINS);
 
         targetSeats.forEach(seat -> {

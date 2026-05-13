@@ -26,6 +26,7 @@ public class BookingController {
     public ResponseEntity<Map<String, Object>> initiateCheckout(
             @AuthenticationPrincipal JwtDto currentUser,
             @Valid @RequestBody CheckoutRequestDto request) {
+
         return ResponseEntity.status(201).body(
                 bookingService.initiateCheckout(
                         currentUser.getUserId(),
@@ -39,25 +40,35 @@ public class BookingController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Map<String, Object>> verifyPayment(
             @Valid @RequestBody PaymentVerificationRequestDto request) {
-        return ResponseEntity.status(200).body(
-                bookingService.confirmPayment(
-                        request.getRazorpayOrderId(),
-                        request.getRazorpayPaymentId(),
-                        request.getRazorpaySignature()
-                )
+
+        // Pass cryptographic parameters to the service layer for validation
+        bookingService.confirmPaymentAndQueueEmail(
+                request.getRazorpayOrderId(),
+                request.getRazorpayPaymentId(),
+                request.getRazorpaySignature()
         );
+
+        return ResponseEntity.status(200).body(Map.of(
+                "success", true,
+                "message", "Payment verified and booking confirmed."
+        ));
     }
 
     @GetMapping("/generateQr/{bookingId}")
-    public ResponseEntity<Map<String, Object>> generateQrCode(@PathVariable UUID bookingId) {
-        return ResponseEntity.status(201).body(bookingService.generateQrCode(bookingId));
-    }
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> generateQrCode(
+            @AuthenticationPrincipal JwtDto currentUser,
+            @PathVariable UUID bookingId) {
 
+        // Pass userId to prevent IDOR vulnerabilities
+        return ResponseEntity.status(200).body(
+                bookingService.generateQrCode(bookingId, currentUser.getUserId())
+        );
+    }
 
     @PostMapping("/scanQR")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Map<String, Object>> scanTicket(@RequestBody String request) {
         return ResponseEntity.status(200).body(bookingService.scanAndVerifyTicket(request));
     }
-
 }
