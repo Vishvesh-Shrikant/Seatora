@@ -80,27 +80,27 @@ public class EmailService {
 
             String html = """
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-                      <div style="background-color: #1a1a2e; color: white; padding: 24px; text-align: center;">
-                        <h1 style="margin: 0; font-size: 24px;">🎬 Booking Confirmed!</h1>
-                        <p style="margin: 8px 0 0; color: #a0a0c0;">Your tickets are ready. Enjoy the show!</p>
-                      </div>
-                      <div style="padding: 24px; background-color: #f9f9f9;">
-                        <table style="width: 100%%; border-collapse: collapse;">
-                          <tr><td style="padding: 8px 0; color: #666;">🎥 Movie</td>     <td style="padding: 8px 0; font-weight: bold;">%s</td></tr>
-                          <tr><td style="padding: 8px 0; color: #666;">🏛️ Theatre</td>   <td style="padding: 8px 0; font-weight: bold;">%s</td></tr>
-                          <tr><td style="padding: 8px 0; color: #666;">📺 Screen</td>    <td style="padding: 8px 0; font-weight: bold;">%s</td></tr>
-                          <tr><td style="padding: 8px 0; color: #666;">⏰ Show Time</td> <td style="padding: 8px 0; font-weight: bold;">%s</td></tr>
-                          <tr><td style="padding: 8px 0; color: #666;">💺 Seats</td>     <td style="padding: 8px 0; font-weight: bold;">%s</td></tr>
-                          <tr><td style="padding: 8px 0; color: #666;">💰 Total Paid</td><td style="padding: 8px 0; font-weight: bold;">₹%s</td></tr>
-                        </table>
-                      </div>
-                      <div style="text-align: center; padding: 24px; background: white;">
-                        <p style="color: #555; margin-bottom: 12px;">Show this QR code at the gate for entry</p>
-                        <img src="cid:qrcode" alt="Ticket QR Code" style="width: 200px; height: 200px; border: 2px solid #1a1a2e; border-radius: 8px;" />
-                      </div>
-                      <div style="background-color: #1a1a2e; color: #a0a0c0; text-align: center; padding: 16px; font-size: 12px;">
-                        <p style="margin: 0;">Seatora — Your Event Booking Partner</p>
-                      </div>
+                          <div style="background-color: #1a1a2e; color: white; padding: 24px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 24px;">🎬 Booking Confirmed!</h1>
+                            <p style="margin: 8px 0 0; color: #a0a0c0;">Your tickets are ready. Enjoy the show!</p>
+                          </div>
+                          <div style="padding: 24px; background-color: #f9f9f9;">
+                            <table style="width: 100%%; border-collapse: collapse;">
+                              <tr><td style="padding: 8px 0; color: #666;">🎥 Movie</td>     <td style="padding: 8px 0; font-weight: bold;">%s</td></tr>
+                              <tr><td style="padding: 8px 0; color: #666;">🏛️ Theatre</td>   <td style="padding: 8px 0; font-weight: bold;">%s</td></tr>
+                              <tr><td style="padding: 8px 0; color: #666;">📺 Screen</td>    <td style="padding: 8px 0; font-weight: bold;">%s</td></tr>
+                              <tr><td style="padding: 8px 0; color: #666;">⏰ Show Time</td> <td style="padding: 8px 0; font-weight: bold;">%s</td></tr>
+                              <tr><td style="padding: 8px 0; color: #666;">💺 Seats</td>     <td style="padding: 8px 0; font-weight: bold;">%s</td></tr>
+                              <tr><td style="padding: 8px 0; color: #666;">💰 Total Paid</td><td style="padding: 8px 0; font-weight: bold;">₹%s</td></tr>
+                            </table>
+                            <div style="text-align: center; padding: 24px; background: white;">
+                              <p style="color: #555; margin-bottom: 12px;">Show this QR code at the gate for entry</p>
+                              <img src="cid:qrcode" alt="Ticket QR Code" style="width: 200px; height: 200px; border: 2px solid #1a1a2e; border-radius: 8px;" />
+                            </div>
+                          </div>
+                          <div style="background-color: #1a1a2e; color: #a0a0c0; text-align: center; padding: 16px; font-size: 12px;">
+                            <p style="margin: 0;">Seatora — Your Event Booking Partner</p>
+                          </div>
                     </div>
                     """.formatted(movieTitle, theatreName, screenNo, showTime, seatList, booking.getTotalAmount().toPlainString());
 
@@ -115,8 +115,6 @@ public class EmailService {
             };
             
             helper.addInline("qrcode", qrResource, "image/png");
-            // Also add as a regular attachment so the user can easily download it
-            helper.addAttachment("Ticket-QR-Code.png", qrResource);
 
             mailSender.send(message);
             log.info("Booking confirmation email sent to {} for bookingId={}", booking.getUser().getEmail(), booking.getId());

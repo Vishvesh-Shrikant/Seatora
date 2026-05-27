@@ -30,6 +30,7 @@ public class EmailMessageListener {
     private final BookingRepository bookingRepository;
 
     @RabbitListener(queues = RabbitMQConfig.EMAIL_QUEUE)
+    @Transactional
     public void receiveMessage(Message message) {
         String messagePayload = new String(message.getBody(), StandardCharsets.UTF_8);
         UUID outboxId;
