@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # ─── RabbitMQ Message Broker ──────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: seatora-rabbitmq
+    ports:
+      - "5672:5672"     # AMQP Broker port
+      - "15672:15672"   # Management Web Dashboard
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - seatora-network
+    restart: unless-stopped
+
+  # ─── Spring Boot Backend Application ─────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: seatora-backend
+    ports:
+      - "8080:8080"     # Expose REST API
+    depends_on:
+      - rabbitmq        # Bootstraps only after RabbitMQ starts
+    env_file:
+      - .env            # Automatically injects variables from your .env file
+    environment:
+      # Override properties dynamically for containerized networking
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_DATASOURCE_URL=${DB_URI}
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - EMAIL_USERNAME=${EMAIL_USERNAME}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - RAZORPAY_TEST_API_KEY=${RAZORPAY_TEST_API_KEY}
+      - RAZORPAY_TEST_API_SECRET=${RAZORPAY_TEST_API_SECRET}
+    networks:
+      - seatora-network
+    restart: unless-stopped
+
+volumes:
+  rabbitmq_data:
+
+networks:
+  seatora-network:
+    driver: bridge
