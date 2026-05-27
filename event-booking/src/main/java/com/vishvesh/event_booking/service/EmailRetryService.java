@@ -5,7 +5,6 @@ import com.vishvesh.event_booking.repository.BookingRepository;
 import com.vishvesh.event_booking.utils.enums.BookingStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,10 +19,11 @@ public class EmailRetryService {
     private final QrCodeService qrCodeService;
 
     /**
+     * DEPRECATED: Replaced by RabbitMQ EmailOutboxProcessor.
      * Periodically checks for CONFIRMED bookings where the email hasn't been sent.
      * This handles cases where the server crashed or the mail server was down.
      */
-    @Scheduled(fixedRate = 300000) // Every 5 minutes
+    // @Scheduled(fixedRate = 300000) // Every 5 minutes
     public void retryFailedEmails() {
         List<Booking> pendingEmails = bookingRepository
                 .findByBookingStatusAndIsConfirmationEmailSentFalse(BookingStatus.CONFIRMED);

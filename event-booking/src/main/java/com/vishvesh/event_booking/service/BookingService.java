@@ -1,7 +1,6 @@
 package com.vishvesh.event_booking.service;
 
 import com.vishvesh.event_booking.dto.email.EmailPayloadDto;
-import com.vishvesh.event_booking.dto.seatavailability.SeatLockRequestDto;
 import com.vishvesh.event_booking.entity.*;
 import com.vishvesh.event_booking.repository.*;
 import com.vishvesh.event_booking.utils.enums.BookingStatus;
@@ -11,9 +10,9 @@ import com.vishvesh.event_booking.utils.enums.SeatStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.json.JsonParseException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -37,31 +36,34 @@ public class BookingService {
     private final EmailOutboxEventRepository emailOutboxRepository;
     private final ObjectMapper objectMapper;
 
+    /**
+     * Step 1 (Transactional): Validate the already-locked seats and persist the Booking record.
+     * The Razorpay call is intentionally outside this transaction to avoid holding a DB
+     * connection open during an external HTTP call.
+     */
     @Transactional
-    public Map<String, Object> initiateCheckout(UUID userId, UUID showId, List<UUID> seatIds) {
+    public Booking createPendingBooking(UUID userId, UUID showId, List<UUID> seatIds) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalStateException("Authenticated user not found."));
 
-        // Enforce concurrency control: Lock seats immediately before querying prices
-        SeatLockRequestDto   seatLockRequestDto = new SeatLockRequestDto();
-        seatLockRequestDto.setUserId(user.getId());
-        seatLockRequestDto.setSeatIds(seatIds);
+        // Seats must already be locked by the client via the /seats/lock endpoint.
+        // We do NOT call lockSeatsForShow() here to avoid double-locking under load.
+        List<SeatAvailability> lockedSeats = seatAvailabilityRepository
+                .findByShowIdAndLockedByIdAndSeatStatus(showId, userId, SeatStatus.LOCKED);
 
-        seatAvailabilityService.lockSeatsForShow(showId, seatLockRequestDto);
-        List<SeatAvailability> lockedSeats = seatAvailabilityRepository.findByShowIdAndLockedByIdAndSeatStatus(showId, userId, SeatStatus.LOCKED);
-        BigDecimal totalAmount = BigDecimal.ZERO;
+        if (lockedSeats.isEmpty()) {
+            throw new IllegalStateException("No locked seats found. Please lock seats before initiating checkout.");
+        }
+
         List<BookingItem> items = new ArrayList<>();
+        BigDecimal totalAmount = BigDecimal.ZERO;
 
         for (SeatAvailability seatAvail : lockedSeats) {
-            // Verify the seat belongs to the requested show
             if (!seatAvail.getShow().getId().equals(showId)) {
                 throw new IllegalArgumentException("Seat " + seatAvail.getSeat().getSeatNo() + " does not belong to the selected show.");
             }
-
-            BigDecimal seatPrice = seatAvail.getSeat().getBasePrice();
-            BigDecimal multiplier = seatAvail.getShow().getShowtimeMultiplier();
-            BigDecimal price = seatPrice.multiply(multiplier);
-
+            BigDecimal price = seatAvail.getSeat().getBasePrice()
+                    .multiply(seatAvail.getShow().getShowtimeMultiplier());
             totalAmount = totalAmount.add(price);
             items.add(BookingItem.builder()
                     .seatAvailability(seatAvail)
@@ -77,28 +79,48 @@ public class BookingService {
 
         items.forEach(item -> item.setBooking(booking));
         booking.setItems(items);
-
         bookingRepository.save(booking);
 
+        log.info("Pending booking created: bookingId={}", booking.getId());
+        return booking;
+    }
+
+    /**
+     * Step 2 (non-transactional orchestrator): Calls Razorpay AFTER the DB transaction
+     * has committed, then saves the Payment record in its own short transaction.
+     * This ensures DB connections are never held open during an external HTTP call.
+     */
+    public Map<String, Object> initiateCheckout(UUID userId, UUID showId, List<UUID> seatIds) {
+        // Phase 1: persist booking (transaction commits here)
+        Booking booking = createPendingBooking(userId, showId, seatIds);
+
+        // Phase 2: call Razorpay outside any transaction
         String razorpayOrderId = paymentGatewayService.createOrder(
-                totalAmount, booking.getId().toString()
+                booking.getTotalAmount(), booking.getId().toString()
         );
 
-        Payment payment = Payment.builder()
-                .booking(booking)
-                .amount(totalAmount)
-                .gatewayOrderId(razorpayOrderId)
-                .paymentStatus(PaymentStatus.PENDING)
-                .build();
-        paymentRepository.save(payment);
+        // Phase 3: persist payment in a fresh short transaction
+        Payment payment = savePaymentRecord(booking.getId(), booking.getTotalAmount(), razorpayOrderId);
 
         log.info("Checkout initiated: bookingId={} razorpayOrderId={}", booking.getId(), razorpayOrderId);
-
         return Map.of(
                 "success", true,
                 "message", "Checkout initiated. Complete payment to confirm your booking.",
                 "payment", payment
         );
+    }
+
+    @Transactional
+    public Payment savePaymentRecord(UUID bookingId, BigDecimal amount, String razorpayOrderId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalStateException("Booking not found: " + bookingId));
+        Payment payment = Payment.builder()
+                .booking(booking)
+                .amount(amount)
+                .gatewayOrderId(razorpayOrderId)
+                .paymentStatus(PaymentStatus.PENDING)
+                .build();
+        return paymentRepository.save(payment);
     }
 
     @Transactional
@@ -138,7 +160,7 @@ public class BookingService {
             emailOutboxRepository.save(outboxEvent);
             log.info("Booking {} confirmed. Email task written to outbox.", booking.getId());
 
-        } catch (JsonParseException e) { // Fixed exception type
+        } catch (JacksonException e) {
             log.error("Critical failure: Could not serialize outbox payload for booking {}", booking.getId(), e);
             throw new RuntimeException("Failed to queue email task", e);
         }
@@ -167,6 +189,11 @@ public class BookingService {
         return Map.of("success", true, "message", "QR code generated successfully", "qrcode", qrImage);
     }
 
+    /**
+     * Pessimistic write lock on the Booking row prevents two concurrent scan
+     * requests from both passing the isScanned check before either commits.
+     * The SELECT ... FOR UPDATE ensures only one transaction proceeds at a time.
+     */
     @Transactional
     public Map<String, Object> scanAndVerifyTicket(String qrData) {
         try {
@@ -174,7 +201,8 @@ public class BookingService {
             String bookingIdStr = parts[0].split(":")[1];
             UUID bookingId = UUID.fromString(bookingIdStr);
 
-            Booking booking = bookingRepository.findById(bookingId)
+            // Pessimistic lock: SELECT ... FOR UPDATE
+            Booking booking = bookingRepository.findByIdWithLock(bookingId)
                     .orElseThrow(() -> new IllegalStateException("Invalid QR Code: Booking not found."));
 
             if (booking.getBookingStatus() != BookingStatus.CONFIRMED) {
@@ -225,9 +253,12 @@ public class BookingService {
             // Critical fix: Release locked seats to prevent inventory leaks
             for (BookingItem item : booking.getItems()) {
                 SeatAvailability seat = item.getSeatAvailability();
-                if (seat.getSeatStatus().equals(SeatStatus.AVAILABLE)) {
+                // Only release seats that are still LOCKED — BOOKED seats must not be touched.
+                if (seat.getSeatStatus().equals(SeatStatus.LOCKED)) {
                     seat.setSeatStatus(SeatStatus.AVAILABLE);
                     seat.setLockedBy(null);
+                    seat.setLockedAt(null);
+                    seat.setLockExpiry(null);
                     seatsToRelease.add(seat);
                 }
             }

@@ -30,7 +30,7 @@ public class CookieUtil {
     public void addJwtCookie(HttpServletResponse response, String token) {
         Cookie cookie = new Cookie(COOKIE_NAME, token);
         cookie.setHttpOnly(true);           // JS cannot read this
-        cookie.setSecure(true);             // HTTPS only — remove for local HTTP dev
+        cookie.setSecure(true);
         cookie.setPath("/");
         cookie.setMaxAge((int)(EXPIRY_TIME*60*60));   // seconds
         // SameSite=Strict via header — Cookie API doesn't expose SameSite directly

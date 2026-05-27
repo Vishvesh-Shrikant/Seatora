@@ -102,6 +102,7 @@ public class AuthService{
     }
 
     public Map<String, Object> login(@NonNull LoginDto request) {
+        log.info("🔑 Login attempt received for email and password: {}", request.getEmail());
         User user = userRepository.findByEmail(request.getEmail().toLowerCase())
                 .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 
@@ -115,11 +116,31 @@ public class AuthService{
         }
 
         if (!user.getIsVerified()) {
-            throw new IllegalStateException("Please verify your email before logging in.");
+            if (user.getVerificationTokenExpiresAt() == null ||
+                user.getVerificationTokenExpiresAt().isBefore(OffsetDateTime.now())){
+                user.setVerificationToken(UUID.randomUUID().toString());
+                user.setVerificationTokenExpiresAt(
+                    OffsetDateTime.now().plusHours(verificationExpiry)
+                );
+
+                userRepository.save(user);
+            }
+            emailService.sendVerificationEmail(
+                user.getEmail(),
+                user.getVerificationToken(),
+                verificationExpiry
+            );
+            return Map.of(
+                "success", false,
+                "userId", buildAuthResponse(user),
+                "message", "Please verify your email before logging in."
+            );
         }
-        return Map.of("success", true, "message" ,
-                "User signed-up and created successfully",
-                "user" , buildAuthResponse(user));
+        return Map.of(
+            "success", true,
+            "message" , "User signed-in successfully",
+            "user" , buildAuthResponse(user)
+        );
     }
 
     public String mintToken(@NonNull AuthResponseDto user) {

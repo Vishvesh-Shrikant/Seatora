@@ -1,5 +1,6 @@
 package com.vishvesh.event_booking.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.vishvesh.event_booking.utils.enums.BookingStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -38,9 +39,10 @@ public class Booking {
 
     @Builder.Default
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<BookingItem> items = new ArrayList<>();
 
-    @Column(name = "total_amount", nullable = false)
+    @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
     @Builder.Default

@@ -1,5 +1,6 @@
 package com.vishvesh.event_booking.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -27,6 +28,7 @@ public class BookingItem {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_id", nullable = false)
+    @JsonBackReference
     private Booking booking;
 
     // Links to the exact seat for the exact show that was locked/purchased

@@ -32,7 +32,11 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@Valid@RequestBody LoginDto request, HttpServletResponse response) {
         Map<String, Object> res = authService.login(request);
-        AuthResponseDto user = authService.findByEmail(request.getEmail());
+
+        if (Boolean.FALSE.equals(res.get("success")) || Boolean.FALSE.equals(res.get("verified"))) {
+            return ResponseEntity.status(401).body(res);
+        }
+        AuthResponseDto user = (AuthResponseDto) res.get("user");
         String token = authService.mintToken(user);
         cookieUtil.addJwtCookie(response, token);
         return ResponseEntity.status(200).body(res);

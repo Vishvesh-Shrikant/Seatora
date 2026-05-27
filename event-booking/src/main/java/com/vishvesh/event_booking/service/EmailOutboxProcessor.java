@@ -43,7 +43,7 @@ public class EmailOutboxProcessor {
                         .build();
 
                 rabbitTemplate.send(RabbitMQConfig.EMAIL_EXCHANGE, RabbitMQConfig.EMAIL_ROUTING_KEY, message);
-                task.setStatus(OutboxStatus.COMPLETED);
+                task.setStatus(OutboxStatus.PROCESSING);
 
             } catch (Exception e) {
                 log.error("Broker connection failed. Halting batch processing. Error: {}", e.getMessage());
