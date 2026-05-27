@@ -28,9 +28,7 @@ public class SeatAvailability {
     @JdbcTypeCode(Types.VARCHAR)
     private UUID id;
 
-    @Version
-    @Column(name = "version", nullable = false)
-    private Long version;
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "show_id", nullable = false)

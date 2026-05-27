@@ -52,6 +52,11 @@ public class EmailService {
             Booking booking = bookingRepository.findById(bookingId)
                     .orElseThrow(() -> new IllegalArgumentException("Booking not found: " + bookingId));
 
+            if (booking.isConfirmationEmailSent()) {
+                log.info("Booking confirmation email already sent for bookingId={}. Skipping.", bookingId);
+                return;
+            }
+
             MimeMessage message = mailSender.createMimeMessage();
 
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -102,7 +107,16 @@ public class EmailService {
             helper.setText(html, true); // true = isHtml
 
             // Embed QR code as inline image with Content-ID "qrcode"
-            helper.addInline("qrcode", new ByteArrayResource(qrCodeImage), "image/png");
+            ByteArrayResource qrResource = new ByteArrayResource(qrCodeImage) {
+                @Override
+                public String getFilename() {
+                    return "qrcode.png";
+                }
+            };
+            
+            helper.addInline("qrcode", qrResource, "image/png");
+            // Also add as a regular attachment so the user can easily download it
+            helper.addAttachment("Ticket-QR-Code.png", qrResource);
 
             mailSender.send(message);
             log.info("Booking confirmation email sent to {} for bookingId={}", booking.getUser().getEmail(), booking.getId());

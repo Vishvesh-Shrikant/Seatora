@@ -8,6 +8,7 @@ import com.vishvesh.event_booking.utils.enums.ShowStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import com.vishvesh.event_booking.mapper.SeatAvailabilityMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SeatAvailabilityService {
@@ -47,7 +49,6 @@ public class SeatAvailabilityService {
 
     @Transactional
     public Map<String, Object> lockSeatsForShow(UUID showId, SeatLockRequestDto request) {
-
         if (request.getSeatIds().size() > MAX_SEATS_PER_REQUEST) {
             throw new IllegalStateException("You can only book up to " + MAX_SEATS_PER_REQUEST + " seats at a time.");
         }

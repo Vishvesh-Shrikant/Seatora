@@ -39,19 +39,17 @@ public class BookingController {
     @PostMapping("/verify")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Map<String, Object>> verifyPayment(
+            @AuthenticationPrincipal JwtDto currentUser,
             @Valid @RequestBody PaymentVerificationRequestDto request) {
 
         // Pass cryptographic parameters to the service layer for validation
-        bookingService.confirmPaymentAndQueueEmail(
+        Map<String, Object> result = bookingService.confirmPaymentAndQueueEmail(
                 request.getRazorpayOrderId(),
                 request.getRazorpayPaymentId(),
                 request.getRazorpaySignature()
         );
 
-        return ResponseEntity.status(200).body(Map.of(
-                "success", true,
-                "message", "Payment verified and booking confirmed."
-        ));
+        return ResponseEntity.status(200).body(result);
     }
 
     @GetMapping("/generateQr/{bookingId}")
@@ -70,5 +68,28 @@ public class BookingController {
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Map<String, Object>> scanTicket(@RequestBody String request) {
         return ResponseEntity.status(200).body(bookingService.scanAndVerifyTicket(request));
+    }
+
+    /** Returns the current user's booking history ordered by date descending. */
+    @GetMapping("/myBookings")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> getMyBookings(
+            @AuthenticationPrincipal JwtDto currentUser) {
+
+        return ResponseEntity.status(200).body(
+                bookingService.getMyBookings(currentUser.getUserId())
+        );
+    }
+
+    /** Returns full detail for a single booking (IDOR-protected). */
+    @GetMapping("/{bookingId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> getBookingDetail(
+            @AuthenticationPrincipal JwtDto currentUser,
+            @PathVariable UUID bookingId) {
+
+        return ResponseEntity.status(200).body(
+                bookingService.getBookingDetail(bookingId, currentUser.getUserId())
+        );
     }
 }

@@ -41,10 +41,6 @@ public class EmailOutboxEvent {
     @Column(name = "outbox_status", nullable = false)
     private OutboxStatus status;
 
-    // Concurrency protection: Prevents two workers from claiming the same row
-    @Version
-    private Long version;
-
     @CreationTimestamp
     @Column(updatable = false)
     private OffsetDateTime createdAt;

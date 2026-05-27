@@ -11,8 +11,10 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -124,7 +126,7 @@ public class BookingService {
     }
 
     @Transactional
-    public void confirmPaymentAndQueueEmail(String orderId, String paymentId, String signature) {
+    public Map<String, Object> confirmPaymentAndQueueEmail(String orderId, String paymentId, String signature) {
         // 1. Cryptographic Verification
         boolean isValid = paymentGatewayService.verifySignature(orderId, paymentId, signature);
         if (!isValid) {
@@ -164,6 +166,12 @@ public class BookingService {
             log.error("Critical failure: Could not serialize outbox payload for booking {}", booking.getId(), e);
             throw new RuntimeException("Failed to queue email task", e);
         }
+
+        return Map.of(
+                "success", true,
+                "message", "Payment verified and booking confirmed.",
+                "bookingId", booking.getId().toString()
+        );
     }
 
     @Transactional
@@ -180,9 +188,20 @@ public class BookingService {
             throw new IllegalStateException("Booking is not confirmed yet");
         }
 
-        String ticketData = String.format("BOOKING:%s|USER:%s",
-                booking.getId().toString(),
-                booking.getUser().getId().toString());
+        String ticketData;
+        try {
+            ticketData = objectMapper.writeValueAsString(Map.of(
+                    "bookingId", booking.getId().toString(),
+                    "userId", booking.getUser().getId().toString(),
+                    "movie", booking.getItems().getFirst().getSeatAvailability().getShow().getMovie().getTitle(),
+                    "theatre", booking.getItems().getFirst().getSeatAvailability().getShow().getScreen().getTheater().getName(),
+                    "screen", booking.getItems().getFirst().getSeatAvailability().getShow().getScreen().getScreenNo(),
+                    "seats", booking.getItems().stream().map(i -> i.getSeatAvailability().getSeat().getSeatNo()).reduce((a, b) -> a + ", " + b).orElse(""),
+                    "time", booking.getItems().getFirst().getSeatAvailability().getShow().getShowDatetime().toString()
+            ));
+        } catch (Exception e) {
+            ticketData = String.format("BOOKING:%s|USER:%s", booking.getId(), booking.getUser().getId());
+        }
 
         byte[] qrImage = qrCodeService.generateTicketQrCode(ticketData);
 
@@ -197,9 +216,17 @@ public class BookingService {
     @Transactional
     public Map<String, Object> scanAndVerifyTicket(String qrData) {
         try {
-            String[] parts = qrData.split("\\|");
-            String bookingIdStr = parts[0].split(":")[1];
-            UUID bookingId = UUID.fromString(bookingIdStr);
+            UUID bookingId;
+            try {
+                // Try parsing the new JSON format
+                JsonNode json = objectMapper.readTree(qrData);
+                bookingId = UUID.fromString(json.get("bookingId").asString());
+            } catch (Exception e) {
+                // Fallback to old pipe-separated format
+                String[] parts = qrData.split("\\|");
+                String bookingIdStr = parts[0].split(":")[1];
+                bookingId = UUID.fromString(bookingIdStr);
+            }
 
             // Pessimistic lock: SELECT ... FOR UPDATE
             Booking booking = bookingRepository.findByIdWithLock(bookingId)
@@ -267,5 +294,95 @@ public class BookingService {
         seatAvailabilityRepository.saveAll(seatsToRelease);
 
         log.info("Failed {} expired bookings and released {} seats.", expiredBookings.size(), seatsToRelease.size());
+    }
+
+    /**
+     * Returns the booking history for the authenticated user, newest first.
+     */
+    @Transactional
+    public Map<String, Object> getMyBookings(UUID userId) {
+        List<Booking> bookings = bookingRepository.findByUserIdOrderByBookedAtDesc(userId);
+
+        List<Map<String, Object>> bookingList = bookings.stream().map(b -> {
+            // Collect seat numbers across all items
+            List<String> seatNumbers = b.getItems().stream()
+                    .map(item -> item.getSeatAvailability().getSeat().getSeatNo())
+                    .toList();
+
+            // Get show / movie info from the first item (all items share the same show)
+            Show show = b.getItems().isEmpty() ? null
+                    : b.getItems().get(0).getSeatAvailability().getShow();
+
+            Map<String, Object> entry = new java.util.LinkedHashMap<>();
+            entry.put("bookingId", b.getId().toString());
+            entry.put("bookingStatus", b.getBookingStatus().toString());
+            entry.put("totalAmount", b.getTotalAmount());
+            entry.put("bookedAt", b.getBookedAt().toString());
+            entry.put("seatCount", b.getItems().size());
+            entry.put("seatNumbers", seatNumbers);
+            if (show != null) {
+                entry.put("movieTitle", show.getMovie().getTitle());
+                entry.put("moviePosterUrl", show.getMovie().getPosterUrl());
+                entry.put("showDatetime", show.getShowDatetime().toString());
+                entry.put("theatreName", show.getScreen().getTheater().getName());
+                entry.put("screenNo", show.getScreen().getScreenNo());
+            }
+            return entry;
+        }).toList();
+
+        return Map.of(
+                "success", true,
+                "message", "Booking history fetched successfully.",
+                "bookings", bookingList
+        );
+    }
+
+    /**
+     * Returns full booking details for a single booking (IDOR-protected).
+     */
+    @Transactional
+    public Map<String, Object> getBookingDetail(UUID bookingId, UUID requestingUserId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalStateException("Booking not found"));
+
+        // IDOR Protection: ensure the booking belongs to the requesting user
+        if (!booking.getUser().getId().equals(requestingUserId)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "You do not have permission to access this booking.");
+        }
+
+        List<Map<String, Object>> items = booking.getItems().stream().map(item -> {
+            SeatAvailability sa = item.getSeatAvailability();
+            Map<String, Object> i = new java.util.LinkedHashMap<>();
+            i.put("seatNo", sa.getSeat().getSeatNo());
+            i.put("seatType", sa.getSeat().getSeatType().toString());
+            i.put("price", item.getPrice());
+            return i;
+        }).toList();
+
+        Show show = booking.getItems().isEmpty() ? null
+                : booking.getItems().get(0).getSeatAvailability().getShow();
+
+        Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("bookingId", booking.getId().toString());
+        result.put("bookingStatus", booking.getBookingStatus().toString());
+        result.put("totalAmount", booking.getTotalAmount());
+        result.put("bookedAt", booking.getBookedAt().toString());
+        result.put("isScanned", booking.isScanned());
+        result.put("items", items);
+        if (show != null) {
+            result.put("movieTitle", show.getMovie().getTitle());
+            result.put("moviePosterUrl", show.getMovie().getPosterUrl());
+            result.put("showDatetime", show.getShowDatetime().toString());
+            result.put("theatreName", show.getScreen().getTheater().getName());
+            result.put("theatreAddress", show.getScreen().getTheater().getAddress());
+            result.put("screenNo", show.getScreen().getScreenNo());
+        }
+
+        return Map.of(
+                "success", true,
+                "message", "Booking details fetched successfully.",
+                "booking", result
+        );
     }
 }

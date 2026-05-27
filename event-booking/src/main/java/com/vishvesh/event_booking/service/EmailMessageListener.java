@@ -3,6 +3,8 @@ package com.vishvesh.event_booking.service;
 import com.vishvesh.event_booking.config.RabbitMQConfig;
 import com.vishvesh.event_booking.dto.email.EmailPayloadDto;
 import com.vishvesh.event_booking.entity.EmailOutboxEvent;
+import com.vishvesh.event_booking.entity.Booking;
+import com.vishvesh.event_booking.repository.BookingRepository;
 import com.vishvesh.event_booking.repository.EmailOutboxEventRepository;
 import com.vishvesh.event_booking.utils.enums.OutboxStatus;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +27,7 @@ public class EmailMessageListener {
     private final EmailService emailService;
     private final QrCodeService qrCodeService;
     private final ObjectMapper objectMapper;
+    private final BookingRepository bookingRepository;
 
     @RabbitListener(queues = RabbitMQConfig.EMAIL_QUEUE)
     public void receiveMessage(Message message) {
@@ -76,7 +80,23 @@ public class EmailMessageListener {
                 bookingId = UUID.fromString(task.getBookingId());
             }
 
-            String ticketData = String.format("BOOKING:%s|USER:%s", bookingId, userId);
+            // Fetch booking to get full details for the JSON QR payload
+            Booking booking = bookingRepository.findById(bookingId).orElse(null);
+            String ticketData;
+            if (booking != null && !booking.getItems().isEmpty()) {
+                ticketData = objectMapper.writeValueAsString(java.util.Map.of(
+                        "bookingId", booking.getId().toString(),
+                        "userId", booking.getUser().getId().toString(),
+                        "movie", booking.getItems().get(0).getSeatAvailability().getShow().getMovie().getTitle(),
+                        "theatre", booking.getItems().get(0).getSeatAvailability().getShow().getScreen().getTheater().getName(),
+                        "screen", booking.getItems().get(0).getSeatAvailability().getShow().getScreen().getScreenNo(),
+                        "seats", booking.getItems().stream().map(i -> i.getSeatAvailability().getSeat().getSeatNo()).reduce((a, b) -> a + ", " + b).orElse(""),
+                        "time", booking.getItems().get(0).getSeatAvailability().getShow().getShowDatetime().toString()
+                ));
+            } else {
+                ticketData = String.format("BOOKING:%s|USER:%s", bookingId, userId);
+            }
+
             byte[] qrCodeImage = qrCodeService.generateTicketQrCode(ticketData);
 
             emailService.sendBookingConfirmation(bookingId, qrCodeImage);
