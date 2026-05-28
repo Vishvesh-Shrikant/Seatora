@@ -60,6 +60,9 @@ public class Booking {
     @Column(name="is_confirmation_email_sent")
     private boolean isConfirmationEmailSent = false;
 
+    @Version
+    private long version;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;

@@ -48,6 +48,9 @@ public class Show {
     @Column(name = "show_status", nullable = false)
     private ShowStatus showStatus = ShowStatus.SCHEDULED;
 
+    @Version
+    private long version;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;

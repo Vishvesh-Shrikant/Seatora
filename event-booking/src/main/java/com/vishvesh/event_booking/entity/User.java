@@ -60,6 +60,9 @@ public class User {
     @Column(name = "verification_expiry")
     private OffsetDateTime verificationTokenExpiresAt;
 
+    @Version
+    private long version;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
