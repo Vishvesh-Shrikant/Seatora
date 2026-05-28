@@ -6,8 +6,8 @@ services:
     image: rabbitmq:4-management
     container_name: seatora-rabbitmq
     ports:
-      - "5672:5672"     # AMQP Broker port
-      - "15672:15672"   # Management Web Dashboard
+      - "5672:5672"   
+      - "15672:15672"   
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
@@ -24,13 +24,12 @@ services:
       dockerfile: Dockerfile
     container_name: seatora-backend
     ports:
-      - "8080:8080"     # Expose REST API
+      - "8080:8080"    
     depends_on:
-      - rabbitmq        # Bootstraps only after RabbitMQ starts
+      - rabbitmq       
     env_file:
-      - .env            # Automatically injects variables from your .env file
+      - .env          
     environment:
-      # Override properties dynamically for containerized networking
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_DATASOURCE_URL=${DB_URI}
       - SPRING_DATASOURCE_USERNAME=${DB_USER}
