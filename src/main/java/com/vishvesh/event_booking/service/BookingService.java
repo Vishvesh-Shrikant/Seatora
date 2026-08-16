@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ public class BookingService {
     private final SeatAvailabilityService seatAvailabilityService;
     private final EmailOutboxEventRepository emailOutboxRepository;
     private final ObjectMapper objectMapper;
+    private final StringRedisTemplate redisTemplate;
 
     /**
      * Step 1 (Transactional): Validate the already-locked seats and persist the Booking record.
@@ -273,6 +275,7 @@ public class BookingService {
         if (expiredBookings.isEmpty()) return;
 
         List<SeatAvailability> seatsToRelease = new ArrayList<>();
+        List<String> redisKeysToDelete = new ArrayList<>();
 
         for (Booking booking : expiredBookings) {
             booking.setBookingStatus(BookingStatus.FAILED);
@@ -287,11 +290,16 @@ public class BookingService {
                     seat.setLockedAt(null);
                     seat.setLockExpiry(null);
                     seatsToRelease.add(seat);
+                    redisKeysToDelete.add("seat:lock:" + seat.getShow().getId() + ":" + seat.getSeat().getId());
                 }
             }
         }
         bookingRepository.saveAll(expiredBookings);
         seatAvailabilityRepository.saveAll(seatsToRelease);
+        
+        if (!redisKeysToDelete.isEmpty()) {
+            redisTemplate.delete(redisKeysToDelete);
+        }
 
         log.info("Failed {} expired bookings and released {} seats.", expiredBookings.size(), seatsToRelease.size());
     }

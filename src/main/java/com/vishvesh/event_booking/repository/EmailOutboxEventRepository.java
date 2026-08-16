@@ -21,4 +21,6 @@ public interface EmailOutboxEventRepository extends JpaRepository<EmailOutboxEve
             @QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2")
     })
     List<EmailOutboxEvent> findTop100ByStatusOrderByCreatedAtAsc(OutboxStatus outboxStatus);
+
+    List<EmailOutboxEvent> findByStatusOrderByCreatedAtAsc(OutboxStatus outboxStatus);
 }

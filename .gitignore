@@ -39,3 +39,5 @@ build/
 
 ### ENV FILE ###
 .env
+
+load_test/results/*

@@ -125,7 +125,7 @@ public class EmailService {
 
         } catch (Exception ex) {
             log.error("Failed to send booking confirmation email for bookingId={}, error={}", bookingId, ex.getMessage());
-            throw new RuntimeException("Email delivery failed, let RabbitMQ retry", ex);
+            throw new RuntimeException("Email delivery failed", ex);
         }
     }
 

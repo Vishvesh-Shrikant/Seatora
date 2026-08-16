@@ -27,7 +27,7 @@ public class EmailOutboxEvent {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    // Required for the RabbitMQ listener routing logic
+    // Required for Spring Retry tracking
     @Column(nullable = false)
     @Builder.Default
     private String emailType = "BOOKING_CONFIRMATION";
@@ -44,4 +44,8 @@ public class EmailOutboxEvent {
     @CreationTimestamp
     @Column(updatable = false)
     private OffsetDateTime createdAt;
+
+    @Column(nullable = false, columnDefinition = "integer default 0")
+    @Builder.Default
+    private int retryCount = 0;
 }

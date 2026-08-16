@@ -15,6 +15,8 @@ import com.vishvesh.event_booking.utils.DateTimeUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -41,6 +43,7 @@ public class ShowService {
         return Map.of("success", true, "message", "Shows retrieved successfully based on Movie", "shows", showsOfMovie.stream().map(ShowMapper::mapToShowResponseDto).toList() );
     }
 
+    @Cacheable(value = "showsByMovie", key = "#showId")
     public Map<String, Object> getShowById(UUID showId) {
         Show show = showRepository.findById(showId).orElseThrow(() -> new IllegalStateException("Show doesn't exist"));
         return Map.of("success", true, "message", "Show retrieved successfully", "show", ShowMapper.mapToShowResponseDto(show));
@@ -49,6 +52,7 @@ public class ShowService {
 
     //for user
     @Transactional
+    @Cacheable(value = "showsByMovie", key = "#movieId + '_' + #targetDate")
     public Map<String, Object> getAvailableShowsOfMoviesForDate(UUID movieId, LocalDate targetDate){
         if(movieRepository.findByIdAndIsActiveTrue(movieId).isEmpty()){
             throw new IllegalStateException("Movie is not active and is deleted");
@@ -91,6 +95,7 @@ public class ShowService {
     }
 
     @Transactional
+    @CacheEvict(value = "showsByMovie", allEntries = true)
     public Map<String, Object> addNewShow(@NonNull ShowRequestDto showRequestDto){
         Movie movie=movieRepository.findById(showRequestDto.getMovieId()).orElseThrow(()-> new IllegalStateException("Movie is not active and is deleted"));
 
@@ -132,6 +137,7 @@ public class ShowService {
     }
 
     @Transactional
+    @CacheEvict(value = "showsByMovie", allEntries = true)
     public Map<String, Object> updateShow(UUID showId, @NonNull ShowRequestDto showRequestDto){
         Show show = showRepository.findById(showId).orElseThrow(()-> new IllegalStateException("Show doesn't exist"));
         Movie movie=movieRepository.findById(showRequestDto.getMovieId()).orElseThrow(()-> new IllegalStateException("Movie is not active and is deleted"));
@@ -162,6 +168,7 @@ public class ShowService {
     }
 
     @Transactional
+    @CacheEvict(value = "showsByMovie", allEntries = true)
     public Map<String, Object> cancelShow(UUID showId){
         Show show = showRepository.findById(showId).orElseThrow(()-> new IllegalStateException("Show doesn't exist"));
 

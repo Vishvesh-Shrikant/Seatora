@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import com.vishvesh.event_booking.mapper.MovieMapper;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,6 +26,7 @@ public class MovieService {
     private final MovieRepository movieRepository;
     private final ShowRepository showRepository;
 
+    @Cacheable(value = "movies", key = "#searchTitle ?: 'all'")
     public Map<String, Object> getAllMovies(String searchTitle)
     {
         List<Movie> movies = (searchTitle != null && !searchTitle.isBlank())
@@ -33,6 +36,7 @@ public class MovieService {
         return Map.of("success", true, "message", "Retrieved movie", "movies", movies.stream().map(MovieMapper::mapToMovieResponseDto).toList());
     }
 
+    @CacheEvict(value = "movies", allEntries = true)
     public Map<String, Object> addMovie(@NonNull MovieRequestDto movieRequestDto){
         if(movieRepository.existsByTitleIgnoreCaseAndIsActiveTrue(movieRequestDto.getTitle()))
         {
@@ -53,6 +57,7 @@ public class MovieService {
         return Map.of("success", true, "message", "Movie added successfully", "movie", movie);
     }
 
+    @CacheEvict(value = "movies", allEntries = true)
     public Map<String, Object> updateMovie(UUID id, @NonNull MovieRequestDto movieRequestDto){
         Movie movie = movieRepository.findByIdAndIsActiveTrue(id)
                 .orElseThrow(() -> new RuntimeException("Movie not found"));
@@ -75,6 +80,7 @@ public class MovieService {
         return Map.of("success", true, "message", "Movie updated successfully", "movie", MovieMapper.mapToMovieResponseDto(updatedMovie));
     }
 
+    @CacheEvict(value = {"movies", "showsByMovie"}, allEntries = true)
     public Map<String, Object> removeMovie(UUID id){
         Movie movie = movieRepository.findByIdAndIsActiveTrue(id)
                 .orElseThrow(() -> new RuntimeException("Movie not found"));

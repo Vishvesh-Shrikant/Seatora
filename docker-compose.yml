@@ -1,18 +1,15 @@
 version: '3.8'
 
 services:
-  # ─── RabbitMQ Message Broker ──────────────────────────────────
-  rabbitmq:
-    image: rabbitmq:4-management
-    container_name: seatora-rabbitmq
+  # ─── Redis Data Store & Message Broker ─────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: seatora-redis
+    command: redis-server --appendonly yes --notify-keyspace-events KEA
     ports:
-      - "5672:5672"   
-      - "15672:15672"   
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      - "6379:6379"
     volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+      - redis_data:/data
     networks:
       - seatora-network
     restart: unless-stopped
@@ -26,11 +23,11 @@ services:
     ports:
       - "8080:8080"    
     depends_on:
-      - rabbitmq       
+      - redis
     env_file:
       - .env          
     environment:
-      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_REDIS_HOST=redis
       - SPRING_DATASOURCE_URL=${DB_URI}
       - SPRING_DATASOURCE_USERNAME=${DB_USER}
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
@@ -44,7 +41,7 @@ services:
     restart: unless-stopped
 
 volumes:
-  rabbitmq_data:
+  redis_data:
 
 networks:
   seatora-network:

@@ -30,13 +30,13 @@ public class MovieController {
 
     @PatchMapping("/updateMovie/{id}")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<Map<String, Object>> updateMovie (@RequestParam UUID id, @RequestBody MovieRequestDto movieRequestDto){
+    public ResponseEntity<Map<String, Object>> updateMovie (@PathVariable UUID id, @RequestBody MovieRequestDto movieRequestDto){
         return ResponseEntity.status(200).body(movieService.updateMovie(id, movieRequestDto));
     }
 
     @DeleteMapping("/removeMovie/{id}")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<Map<String, Object>> removeMovie(@RequestParam UUID id){
+    public ResponseEntity<Map<String, Object>> removeMovie(@PathVariable UUID id){
         return  ResponseEntity.status(200).body(movieService.removeMovie(id));
     }
 }

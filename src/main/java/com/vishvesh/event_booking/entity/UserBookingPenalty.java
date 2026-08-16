@@ -10,7 +10,9 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(name = "user_booking_penalties")
+@Table(name = "user_booking_penalties", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"user_id", "show_id"})
+})
 @Getter
 @Setter
 @NoArgsConstructor

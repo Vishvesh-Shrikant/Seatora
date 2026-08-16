@@ -62,7 +62,7 @@ public class SeatLockCleanupService {
         }
     }
 
-    private void recordOrIncrementPenalty(UUID userId, UUID showId) {
+    public void recordOrIncrementPenalty(UUID userId, UUID showId) {
         penaltyRepository.findByUserIdAndShowId(userId, showId)
                 .ifPresentOrElse(
                         existing -> {
