@@ -13,7 +13,9 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -24,7 +26,7 @@ public class EmailService {
     private final BookingRepository bookingRepository;
 
     public EmailService(JavaMailSender mailSender, 
-                        @Value("${BASE_URL}") String baseurl, 
+                        @Value("${FRONTEND_URL}") String baseurl, 
                         @Value("${EMAIL_USERNAME}") String fromEmail,
                         BookingRepository bookingRepository) {
         this.mailSender = mailSender;
@@ -35,7 +37,7 @@ public class EmailService {
 
 
     public void sendVerificationEmail(String toEmail, String token, long expiry) {
-        String link = baseurl + "/auth/verify-email?token=" + token;
+        String link = baseurl + "/verify-email?token=" + token;
         SimpleMailMessage message = getMailMessage(toEmail, expiry, link);
         try {
             mailSender.send(message);
@@ -71,6 +73,7 @@ public class EmailService {
             String theatreName = firstItem.getSeatAvailability().getShow().getScreen().getTheater().getName();
             String screenNo   = firstItem.getSeatAvailability().getShow().getScreen().getScreenNo();
             String showTime   = firstItem.getSeatAvailability().getShow().getShowDatetime()
+                    .atZoneSameInstant(ZoneId.of("Asia/Kolkata"))
                     .format(DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a"));
 
             String seatList = booking.getItems().stream()

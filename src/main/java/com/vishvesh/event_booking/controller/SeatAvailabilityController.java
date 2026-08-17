@@ -26,4 +26,11 @@ public class SeatAvailabilityController {
             @RequestBody SeatLockRequestDto request) {
         return ResponseEntity.ok(seatAvailabilityService.lockSeatsForShow(showId, request));
     }
+
+    @PostMapping("/unlock")
+    public ResponseEntity<Map<String, Object>> unlockSeats(
+            @PathVariable UUID showId,
+            @RequestBody SeatLockRequestDto request) {
+        return ResponseEntity.ok(seatAvailabilityService.unlockSeatsForShow(showId, request));
+    }
 }

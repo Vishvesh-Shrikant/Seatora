@@ -187,4 +187,34 @@ public class SeatAvailabilityService {
         }
     }
 
+    @Transactional
+    @CacheEvict(value = "seatMap", key = "#showId")
+    public Map<String, Object> unlockSeatsForShow(UUID showId, SeatLockRequestDto request) {
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new IllegalStateException("User not found"));
+
+        List<SeatAvailability> userLocks = seatAvailabilityRepository
+                .findByShowIdAndLockedByIdAndSeatStatus(showId, user.getId(), SeatStatus.LOCKED);
+
+        if (!userLocks.isEmpty()) {
+            List<String> keysToDelete = new ArrayList<>();
+            userLocks.forEach(seat -> {
+                seat.setSeatStatus(SeatStatus.AVAILABLE);
+                seat.setLockedBy(null);
+                seat.setLockedAt(null);
+                seat.setLockExpiry(null);
+                keysToDelete.add(getSeatLockKey(showId, seat.getSeat().getId()));
+            });
+            seatAvailabilityRepository.saveAll(userLocks);
+            if (!keysToDelete.isEmpty()) {
+                redisTemplate.delete(keysToDelete);
+            }
+        }
+
+        return Map.of(
+                "success", true,
+                "message", "Seats unlocked successfully"
+        );
+    }
+
 }

@@ -18,6 +18,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,7 +61,7 @@ public class BookingService {
         }
 
         List<BookingItem> items = new ArrayList<>();
-        BigDecimal totalAmount = BigDecimal.ZERO;
+        BigDecimal subtotal = BigDecimal.ZERO;
 
         for (SeatAvailability seatAvail : lockedSeats) {
             if (!seatAvail.getShow().getId().equals(showId)) {
@@ -68,12 +69,20 @@ public class BookingService {
             }
             BigDecimal price = seatAvail.getSeat().getBasePrice()
                     .multiply(seatAvail.getShow().getShowtimeMultiplier());
-            totalAmount = totalAmount.add(price);
+            subtotal = subtotal.add(price);
             items.add(BookingItem.builder()
                     .seatAvailability(seatAvail)
                     .price(price)
                     .build());
         }
+
+        // Calculate 10% Convenience Fee and 18% GST on the convenience fee
+        BigDecimal convenienceFeeRate = new BigDecimal("0.10");
+        BigDecimal gstRate = new BigDecimal("0.18");
+
+        BigDecimal convenienceFee = subtotal.multiply(convenienceFeeRate).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal gst = convenienceFee.multiply(gstRate).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal totalAmount = subtotal.add(convenienceFee).add(gst).setScale(2, RoundingMode.HALF_UP);
 
         Booking booking = Booking.builder()
                 .user(user)
