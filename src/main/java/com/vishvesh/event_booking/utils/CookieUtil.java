@@ -23,17 +23,11 @@ public class CookieUtil {
                 + "; Max-Age=" + maxAgeSeconds
                 + "; Path=/"
                 + "; HttpOnly"
-                // + "; Secure"
-                + "; SameSite=Strict";
+                + "; Secure"
+                + "; SameSite=None";
     }
 
     public void addJwtCookie(HttpServletResponse response, String token) {
-        Cookie cookie = new Cookie(COOKIE_NAME, token);
-        cookie.setHttpOnly(true);           // JS cannot read this
-        cookie.setSecure(false);
-        cookie.setPath("/");
-        cookie.setMaxAge((int)(EXPIRY_TIME*60*60));   // seconds
-        // SameSite=Strict via header — Cookie API doesn't expose SameSite directly
         response.addHeader("Set-Cookie", buildCookieHeader(token, (int)(EXPIRY_TIME*60*60)));
     }
 
